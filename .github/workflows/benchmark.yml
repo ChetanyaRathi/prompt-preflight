@@ -34,6 +34,9 @@ jobs:
       - name: Smoke-test Claude installer dry run
         run: python3 scripts/install_claude_plugin.py --dry-run
 
+      - name: Smoke-test Kiro installer dry run
+        run: python3 scripts/install_kiro_hook.py --dry-run
+
       - name: Run vague-prompt benchmark
         run: >
           python3 scripts/benchmark_vague_prompts.py

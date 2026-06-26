@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Install Prompt Preflight for Codex, Claude Code, or both.
+"""Install Prompt Preflight for Codex, Claude Code, Kiro, or multiple hosts.
 
 This is the friendly setup entry point for users. It delegates to the
-host-specific installers so advanced Codex and Claude Code options remain
+host-specific installers so advanced Codex, Claude Code, and Kiro options remain
 available in one place.
 """
 
@@ -67,15 +67,32 @@ def build_claude_args(args: argparse.Namespace) -> list[str]:
     return claude_args
 
 
+def build_kiro_args(args: argparse.Namespace) -> list[str]:
+    kiro_args: list[str] = []
+    if args.dry_run:
+        kiro_args.append("--dry-run")
+    if args.kiro_scope:
+        kiro_args.extend(["--scope", args.kiro_scope])
+    if args.kiro_workspace:
+        kiro_args.extend(["--workspace", path_arg(args.kiro_workspace) or ""])
+    if args.kiro_hooks_dir:
+        kiro_args.extend(["--hooks-dir", path_arg(args.kiro_hooks_dir) or ""])
+    if args.kiro_python_bin:
+        kiro_args.extend(["--python-bin", args.kiro_python_bin])
+    if args.kiro_force:
+        kiro_args.append("--force")
+    return kiro_args
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Install Prompt Preflight for Codex, Claude Code, or both.",
+        description="Install Prompt Preflight for Codex, Claude Code, Kiro, or multiple hosts.",
     )
     parser.add_argument(
         "--target",
-        choices=("both", "codex", "claude"),
+        choices=("both", "codex", "claude", "kiro"),
         default="both",
-        help="Which host integration to install",
+        help="Which host integration to install. 'both' means Codex and Claude Code.",
     )
     parser.add_argument(
         "--dry-run",
@@ -126,6 +143,34 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Claude Code skills directory that should contain prompt-preflight",
     )
+
+    kiro = parser.add_argument_group("Kiro options")
+    kiro.add_argument(
+        "--kiro-scope",
+        choices=("workspace", "user"),
+        default="workspace",
+        help="Install Kiro hook into a workspace or user-level hooks directory",
+    )
+    kiro.add_argument(
+        "--kiro-workspace",
+        type=Path,
+        help="Workspace root to use when installing the Kiro hook with workspace scope",
+    )
+    kiro.add_argument(
+        "--kiro-hooks-dir",
+        type=Path,
+        help="Override the exact Kiro hooks directory",
+    )
+    kiro.add_argument(
+        "--kiro-python-bin",
+        default="python3",
+        help="Python executable to use in the Kiro hook command",
+    )
+    kiro.add_argument(
+        "--kiro-force",
+        action="store_true",
+        help="Allow replacing an existing Kiro prompt-preflight.json hook file",
+    )
     return parser
 
 
@@ -143,6 +188,11 @@ def main(argv: list[str] | None = None) -> int:
         print("== Claude Code setup ==")
         claude_installer = load_installer("install_claude_plugin.py")
         failures += 1 if claude_installer.main(build_claude_args(args)) else 0
+
+    if args.target == "kiro":
+        print("== Kiro setup ==")
+        kiro_installer = load_installer("install_kiro_hook.py")
+        failures += 1 if kiro_installer.main(build_kiro_args(args)) else 0
 
     return 1 if failures else 0
 
