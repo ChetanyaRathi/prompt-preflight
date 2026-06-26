@@ -72,6 +72,23 @@ class UnifiedInstallerTests(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertFalse(claude_skills_dir.exists())
 
+    def test_target_kiro_only_accepts_dry_run(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory) / "workspace"
+            workspace.mkdir()
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = self.installer.main(
+                    [
+                        "--target",
+                        "kiro",
+                        "--dry-run",
+                        "--kiro-workspace",
+                        str(workspace),
+                    ]
+                )
+            self.assertEqual(code, 0)
+            self.assertFalse((workspace / ".kiro" / "hooks" / "prompt-preflight.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

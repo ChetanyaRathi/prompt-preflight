@@ -2,7 +2,7 @@
 
 > Catch underspecified requests before they become expensive model turns.
 
-Prompt Preflight is a local Codex plugin, Claude Code plugin, and standalone CLI that checks whether a prompt is specific enough to act on. When ambiguity and the cost of being wrong are both high, it pauses the request and gives the user:
+Prompt Preflight is a local Codex plugin, Claude Code plugin, Kiro hook, and standalone CLI that checks whether a prompt is specific enough to act on. When ambiguity and the cost of being wrong are both high, it pauses the request and gives the user:
 
 1. Their original prompt.
 2. A domain-aware example of a stronger prompt.
@@ -128,7 +128,7 @@ The model receives a target, outcome, boundaries, and definition of done before 
 
 ## Key features
 
-- Runs before a Codex or Claude Code model turn through `UserPromptSubmit`.
+- Runs before a Codex, Claude Code, or Kiro model turn through `UserPromptSubmit`.
 - Uses no model, API key, network access, or external service.
 - Routes prompts by domain before selecting feedback.
 - Includes software and image-generation feedback profiles.
@@ -257,10 +257,18 @@ Use the unified installer when you want the simplest path:
 python3 scripts/install_prompt_preflight.py
 ```
 
-By default it sets up both supported hosts:
+By default it sets up Codex and Claude Code:
 
 - Codex: copies the plugin to `~/plugins/prompt-preflight`, updates `~/.agents/plugins/marketplace.json`, and attempts `codex plugin add prompt-preflight@personal`.
 - Claude Code: copies the plugin to `~/.claude/skills/prompt-preflight`, which Claude loads as `prompt-preflight@skills-dir`.
+
+Kiro is installed explicitly because the hook can be workspace-level or user-level:
+
+```bash
+python3 scripts/install_prompt_preflight.py \
+  --target kiro \
+  --kiro-workspace /path/to/your/project
+```
 
 Preview the setup without writing files:
 
@@ -273,6 +281,7 @@ Install only one host:
 ```bash
 python3 scripts/install_prompt_preflight.py --target codex
 python3 scripts/install_prompt_preflight.py --target claude
+python3 scripts/install_prompt_preflight.py --target kiro --kiro-scope user
 ```
 
 Refresh existing installed copies:
@@ -351,9 +360,31 @@ python3 scripts/install_claude_plugin.py --help
 
 See the [Claude Code setup guide](docs/CLAUDE.md) for local testing, hook smoke tests, install options, configuration, and troubleshooting.
 
+## Install in Kiro
+
+Prompt Preflight supports Kiro IDE through a `UserPromptSubmit` command hook. Kiro blocks prompt submission when the hook exits with status `2`, so the Kiro adapter writes the clarification message to stderr and exits `2` for vague prompts.
+
+Install into one workspace:
+
+```bash
+python3 scripts/install_prompt_preflight.py \
+  --target kiro \
+  --kiro-workspace /path/to/your/project
+```
+
+Install for all Kiro workspaces:
+
+```bash
+python3 scripts/install_prompt_preflight.py \
+  --target kiro \
+  --kiro-scope user
+```
+
+See the [Kiro setup guide](docs/KIRO.md) for IDE hook testing, user-level install, direct hook smoke tests, and the Kiro CLI note.
+
 ## Configuration
 
-Create `.prompt-preflight.json` in the project where Codex or Claude Code runs:
+Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro runs:
 
 ```json
 {
@@ -390,6 +421,8 @@ As with any local plugin, review `.codex-plugin/plugin.json`, `hooks/hooks.json`
 
 For Claude Code, review `.claude-plugin/plugin.json`, `hooks/claude-hooks.json`, and `scripts/prompt_preflight_claude_hook.py`.
 
+For Kiro, review the generated `.kiro/hooks/prompt-preflight.json` file and `scripts/prompt_preflight_kiro_hook.py`.
+
 ## Limitations
 
 - Rule-based intent routing cannot understand every phrasing.
@@ -424,6 +457,14 @@ python3 scripts/prompt_preflight_claude_hook.py <<'EOF'
 EOF
 ```
 
+Smoke-test the Kiro hook contract:
+
+```bash
+python3 scripts/prompt_preflight_kiro_hook.py 2>&1 <<'EOF'
+{"hook_event_name":"userPromptSubmit","cwd":".","prompt":"Create a car image"}
+EOF
+```
+
 The project currently has regression coverage for vague and detailed prompts, domain routing, bypass behavior, nudge mode, and malformed hook input.
 
 ## Roadmap
@@ -432,7 +473,7 @@ The project currently has regression coverage for vague and detailed prompts, do
 - More domain profiles, including writing, research, data analysis, and presentations
 - User-defined terminology and intent rules
 - Per-domain thresholds
-- More host adapters beyond Codex and Claude Code
+- More host adapters beyond Codex, Claude Code, and Kiro
 - False-positive feedback capture and calibration reports
 
 ## Public launch checklist
@@ -440,7 +481,7 @@ The project currently has regression coverage for vague and detailed prompts, do
 Before making the repository public:
 
 - Publish the contents of this `prompt-preflight` folder as the GitHub repository root so this README appears on the landing page.
-- Add GitHub topics such as `codex`, `claude-code`, `ai-agents`, `prompt-engineering`, `llm`, `developer-tools`, `token-cost`, `python`, `hooks`, and `productivity`.
+- Add GitHub topics such as `codex`, `claude-code`, `kiro`, `ai-agents`, `prompt-engineering`, `llm`, `developer-tools`, `token-cost`, `python`, `hooks`, and `productivity`.
 - Upload `docs/assets/social-preview.jpg` as the GitHub social preview image.
 - Confirm the demo GIF does not show secrets, private repo names, customer data, or personal notifications.
 - Run `python3 scripts/install_prompt_preflight.py --dry-run` before tagging a release.

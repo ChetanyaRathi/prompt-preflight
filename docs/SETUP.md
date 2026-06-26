@@ -2,7 +2,7 @@
 
 This guide is for people installing Prompt Preflight into their own Codex environment. Prompt Preflight runs locally, makes no network or model calls, and uses a `UserPromptSubmit` hook to check a prompt before Codex begins model work.
 
-For Claude Code, use [Prompt Preflight for Claude Code](CLAUDE.md).
+For Claude Code, use [Prompt Preflight for Claude Code](CLAUDE.md). For Kiro, use [Prompt Preflight for Kiro](KIRO.md).
 
 ## Requirements
 
