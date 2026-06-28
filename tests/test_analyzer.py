@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from prompt_preflight.analyzer import analyze_prompt, classify_intent, suggest_rewrite
-from prompt_preflight.hook import clarification_message, main as hook_main, process_payload
+from prompt_preflight.hook import EXAMPLES_URL, clarification_message, main as hook_main, process_payload
 from prompt_preflight.telemetry import read_events
 
 
@@ -143,11 +143,13 @@ class HookTests(unittest.TestCase):
         self.assertIn('"Make the dashboard better"', result["reason"])
         self.assertIn("Try asking:", result["reason"])
         self.assertIn("Improve the dashboard", result["reason"])
+        self.assertIn(EXAMPLES_URL, result["reason"])
 
     def test_feedback_orders_original_rewrite_then_questions(self) -> None:
         message = clarification_message(analyze_prompt("Fix it"))
         self.assertLess(message.index("Your prompt:"), message.index("Try asking:"))
         self.assertLess(message.index("Try asking:"), message.index("Fill in the brackets"))
+        self.assertLess(message.index("Fill in the brackets"), message.index("Examples and templates:"))
 
     def test_hook_allows_clear_prompt_without_output(self) -> None:
         result = process_payload(

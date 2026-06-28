@@ -11,6 +11,9 @@ from .config import load_config
 from .telemetry import record_analysis_safely
 
 
+EXAMPLES_URL = "https://github.com/akg268/prompt-preflight/blob/main/docs/EXAMPLES.md"
+
+
 def clarification_message(analysis: Analysis) -> str:
     lines = [
         f"Prompt Preflight paused this request (clarification score {analysis.score}/100).",
@@ -26,6 +29,8 @@ def clarification_message(analysis: Analysis) -> str:
     lines.extend(f"{index}. {question}" for index, question in enumerate(analysis.questions, 1))
     lines.extend(
         [
+            "",
+            f"Examples and templates: {EXAMPLES_URL}",
             "",
             "To intentionally send the original prompt once, add [preflight:skip].",
         ]

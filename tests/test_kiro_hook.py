@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from prompt_preflight.kiro_hook import main as kiro_hook_main, process_payload
+from prompt_preflight.hook import EXAMPLES_URL
 
 
 class KiroHookTests(unittest.TestCase):
@@ -22,6 +23,7 @@ class KiroHookTests(unittest.TestCase):
         self.assertIn("Your prompt:", stderr)
         self.assertIn('"Create a car image"', stderr)
         self.assertIn("aspect ratio", stderr)
+        self.assertIn(EXAMPLES_URL, stderr)
 
     def test_kiro_hook_allows_clear_prompt(self) -> None:
         code, stdout, stderr = process_payload(

@@ -10,6 +10,10 @@ Prompt Preflight is a local Codex plugin, Claude Code plugin, Kiro hook, and sta
 
 The check uses deterministic Python rules. It makes no network requests and calls no model.
 
+## Prompt examples and templates
+
+When Prompt Preflight catches a vague prompt, it links to [vague prompt examples and templates](docs/EXAMPLES.md). The examples page includes common vague prompts for bug fixes, new features, refactors, UI work, performance, deployment, tests, documentation, security, analytics, image generation, and writing.
+
 ## Help the project grow
 
 If Prompt Preflight saves you even one failed agent turn, please consider starring the repo. Stars make it easier for other Codex, Claude Code, and Kiro users to discover the project, and they help signal which integrations are worth building next.
