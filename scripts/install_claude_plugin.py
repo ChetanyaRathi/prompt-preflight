@@ -65,6 +65,7 @@ def validate_source_plugin(root: Path) -> dict[str, Any]:
         root / "scripts" / "prompt_preflight_claude_hook.py",
         root / "src" / "prompt_preflight" / "claude_hook.py",
         root / "src" / "prompt_preflight" / "analyzer.py",
+        root / "src" / "prompt_preflight" / "data" / "vague_prompts.txt",
     )
     missing = [str(path) for path in required_paths if not path.exists()]
     if missing:

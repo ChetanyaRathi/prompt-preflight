@@ -57,6 +57,7 @@ def validate_source(root: Path) -> None:
         root / "scripts" / "prompt_preflight_kiro_hook.py",
         root / "src" / "prompt_preflight" / "kiro_hook.py",
         root / "src" / "prompt_preflight" / "analyzer.py",
+        root / "src" / "prompt_preflight" / "data" / "vague_prompts.txt",
     )
     missing = [str(path) for path in required_paths if not path.exists()]
     if missing:

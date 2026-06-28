@@ -1,0 +1,174 @@
+# Canonical vague prompt benchmark library for Prompt Preflight.
+#
+# One prompt per non-comment line. Blank lines and lines starting with "#"
+# are ignored by the loader. Keep prompts intentionally underspecified: this
+# file is a regression library for prompts that should usually trigger a
+# clarification before a model turn.
+
+# General software and product changes
+Fix it
+Make it better
+Improve the dashboard
+Clean up the code
+Build a todo app
+Create an admin panel
+Implement auth
+Add better payments
+Rewrite the backend
+Refactor everything
+Modernize the UI
+Fix the login bug
+Update the API
+Remove the bad code
+Rename things properly
+Replace this with a better version
+Integrate Stripe properly
+Build a chat feature
+Create a reporting system
+Design a better homepage
+Generate better documentation
+Polish the landing page
+Make onboarding user-friendly
+Improve error handling
+Deploy the app
+Build a CRM
+Create a mobile app
+Implement permissions
+Add notifications everywhere
+Rewrite the frontend
+Refactor the auth flow
+Modernize the entire codebase
+Make the API robust
+Fix checkout
+Update the schema
+Upgrade dependencies
+Remove unused stuff
+Rename this module
+Replace the old system
+Integrate analytics
+Build a settings page
+Create a billing system
+Design the dashboard
+Polish the UI
+Make search better
+Fix production issue
+Build an image generation API
+Create an image processing app
+Implement caching
+Add security everywhere
+Rewrite the whole repo
+Refactor database layer
+Modernize authentication
+Make forms nicer
+Fix accessibility
+Update permissions
+Remove security risk
+Rename bad variables
+Replace auth
+Integrate OAuth
+Build a workflow
+Create a plugin
+Design a better settings screen
+Polish docs
+Improve this component
+Fix this bug
+Build the full app
+Create a good API
+Implement the feature
+Add robust validation
+Refactor this
+Fix the checkout bug
+Build a customer portal
+
+# Optimization
+Optimize the database
+Make the app faster
+Optimize performance
+Improve scalability
+Optimize costs
+Optimize this query
+Optimize the onboarding flow
+
+# Deployment and migration
+Deploy this to production
+Upgrade the whole project
+Migrate the database
+Migrate users
+Upgrade infrastructure
+Migrate billing
+Make deployment safer
+Deploy everything
+Deploy backend to prod
+Deploy the worker
+Migrate the legacy data
+
+# Tests
+Fix the flaky tests
+Generate more tests
+Rewrite all tests
+
+# Data analysis and reporting
+Generate a nice report
+Analyze the data
+Make a chart
+Create a dashboard report
+Summarize the spreadsheet
+Find insights
+Calculate the metrics
+Visualize sales data
+Generate a report
+Analyze churn
+Clean the dataset
+Analyze retention trends
+
+# Image generation
+Create a car image
+Generate a logo
+Draw a cat
+Illustrate a hero image
+Make a product photo
+Paint a portrait
+Render a house
+Create a poster
+Generate an icon
+Draw a landscape
+Create a product hero image
+
+# Writing
+Write a blog post
+Write a better intro
+Make this sound professional
+Rewrite this email
+Draft the announcement
+Summarize it
+Create website copy
+Improve the proposal
+Write a case study
+Edit this for clarity
+Write a newsletter
+
+# Research
+Research this topic
+Compare the options
+Find the best tool
+Investigate competitors
+Look into pricing
+Evaluate vendors
+Research the market
+Find sources
+Compare databases
+Investigate this trend
+Research compliance tools
+
+# Presentations
+Create a presentation
+Make a slide deck
+Prepare slides
+Design a pitch deck
+Make this presentation better
+Create investor slides
+Build a quarterly review deck
+Polish the slides
+Summarize this into slides
+Create a webinar deck
+Create training slides

@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from prompt_preflight.claude_hook import main as claude_hook_main, process_payload
+from prompt_preflight.hook import EXAMPLES_URL
 
 
 class ClaudeHookTests(unittest.TestCase):
@@ -22,6 +23,7 @@ class ClaudeHookTests(unittest.TestCase):
         self.assertIn("Your prompt:", result["reason"])
         self.assertIn('"Create a car image"', result["reason"])
         self.assertIn("aspect ratio", result["reason"])
+        self.assertIn(EXAMPLES_URL, result["reason"])
 
     def test_claude_hook_allows_clear_prompt_without_output(self) -> None:
         result = process_payload(

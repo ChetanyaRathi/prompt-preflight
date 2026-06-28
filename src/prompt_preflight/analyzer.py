@@ -10,9 +10,11 @@ from typing import Iterable
 BYPASS_MARKERS = ("[preflight:skip]", "#preflight-ignore", "/preflight-skip")
 
 ACTION_RE = re.compile(
-    r"\b(add|build|change|clean\s*up|convert|create|deploy|design|draw|fix|generate|"
-    r"illustrate|implement|improve|integrate|make|migrate|modernize|optimi[sz]e|paint|"
-    r"polish|refactor|remove|rename|render|replace|rewrite|ship|update|upgrade)\b",
+    r"\b(add|analy[sz]e|build|calculate|change|clean(?:\s*up)?|compare|convert|create|"
+    r"deploy|design|draft|draw|edit|evaluate|find|fix|generate|illustrate|implement|"
+    r"improve|integrate|investigate|look\s+into|make|migrate|modernize|optimi[sz]e|outline|paint|"
+    r"polish|prepare|proofread|refactor|remove|rename|render|replace|research|rewrite|"
+    r"ship|summari[sz]e|update|upgrade|visuali[sz]e|write)\b",
     re.IGNORECASE,
 )
 VAGUE_RE = re.compile(
@@ -42,7 +44,8 @@ SUCCESS_RE = re.compile(
     re.IGNORECASE,
 )
 FORMAT_RE = re.compile(
-    r"\b(as (?:a|an)|csv|diff|diagram|html|json|markdown|patch|plan|prd|table|yaml)\b",
+    r"\b(as (?:a|an)|bullets?|csv|deck|diff|diagram|doc(?:ument)?|email|html|json|"
+    r"markdown|memo|outline|patch|pdf|plan|prd|report|slides?|table|yaml)\b",
     re.IGNORECASE,
 )
 ANCHOR_RE = re.compile(
@@ -59,7 +62,7 @@ QUESTION_RE = re.compile(
     re.IGNORECASE,
 )
 CREATIVE_RE = re.compile(
-    r"\b(essay|haiku|joke|poem|story|tagline|translate|translation)\b",
+    r"\b(haiku|joke|poem|story|tagline|translate|translation)\b",
     re.IGNORECASE,
 )
 NEW_BUILD_RE = re.compile(r"\b(build|create|design|implement)\b", re.IGNORECASE)
@@ -91,6 +94,42 @@ IMAGE_FORMAT_RE = re.compile(
     r"\b\d{1,2}:\d{1,2}\b",
     re.IGNORECASE,
 )
+WRITING_REQUEST_RE = re.compile(
+    r"\b(?:create|draft|edit|improve|rewrite|write|proofread|polish|summari[sz]e|make)\b.*\b(?:announcement|"
+    r"article|blog|case study|copy|doc(?:ument)?|draft|email|essay|intro(?:duction)?|memo|message|newsletter|"
+    r"proposal|readme|report|summary|tone|writing)\b|\bmake\s+this\s+sound\b|"
+    r"\bedit\s+this\s+for\s+clarity\b|\bsummari[sz]e\s+(?:it|this|the)\b",
+    re.IGNORECASE,
+)
+RESEARCH_REQUEST_RE = re.compile(
+    r"\b(?:research|compare|investigate|evaluate|find|look\s+into)\b.*\b(?:alternatives?|"
+    r"competitors?|market|options?|pricing|sources?|tools?|vendors?)\b|"
+    r"\b(?:research|compare|investigate|evaluate|find|look\s+into)\s+(?:it|this|that|the\s+topic)\b",
+    re.IGNORECASE,
+)
+DATA_ANALYSIS_REQUEST_RE = re.compile(
+    r"\b(?:analy[sz]e|calculate|clean|explore|find|generate|summari[sz]e|visuali[sz]e|"
+    r"make|create)\b.*\b(?:chart|churn|cohort|conversion|csv|data|dataset|"
+    r"funnel|insights?|metrics?|numbers?|report|retention|revenue|sales|spreadsheet|"
+    r"table|trends?)\b",
+    re.IGNORECASE,
+)
+PRESENTATION_REQUEST_RE = re.compile(
+    r"\b(?:build|create|design|draft|make|polish|prepare|summari[sz]e|turn)\b.*\b(?:deck|"
+    r"presentation|slides?|webinar)\b|\b(?:pitch|investor|quarterly)\s+deck\b",
+    re.IGNORECASE,
+)
+AUDIENCE_RE = re.compile(r"\b(?:audience|for|to)\s+(?:[A-Za-z][\w-]+|the\s+\w+)", re.IGNORECASE)
+GOAL_RE = re.compile(r"\b(?:goal|purpose|so that|to help|decision|objective|call to action|cta)\b", re.IGNORECASE)
+SOURCE_RE = re.compile(r"\b(?:based on|source|include|exclude|from|using|according to|dataset|csv|spreadsheet|table)\b", re.IGNORECASE)
+TONE_RE = re.compile(r"\b(?:tone|voice|professional|casual|friendly|formal|concise|persuasive|technical)\b", re.IGNORECASE)
+LENGTH_RE = re.compile(r"\b(?:words?|pages?|paragraphs?|slides?|minutes?|short|brief|one-page|long-form)\b|\b\d+\s*(?:words?|pages?|slides?|minutes?)\b", re.IGNORECASE)
+RESEARCH_SOURCE_RE = re.compile(r"\b(?:sources?|citations?|recent|latest|peer[- ]reviewed|official|date range|from|exclude|include)\b", re.IGNORECASE)
+CRITERIA_RE = re.compile(r"\b(?:criteria|compare|pros|cons|tradeoffs?|cost|pricing|features?|requirements?|scorecard)\b", re.IGNORECASE)
+DATASET_RE = re.compile(r"\b(?:csv|dataset|spreadsheet|table|columns?|rows?|file|database|query|data source)\b|`[^`]+`", re.IGNORECASE)
+METRIC_RE = re.compile(r"\b(?:metric|kpi|revenue|churn|conversion|retention|sales|latency|count|average|median|p95|trend)\b", re.IGNORECASE)
+PRESENTATION_STORY_RE = re.compile(r"\b(?:story|narrative|outline|agenda|sections?|key message|takeaway|thesis)\b", re.IGNORECASE)
+PRESENTATION_FORMAT_RE = re.compile(r"\b(?:slides?|deck|speaker notes|talk track|minutes?|template|brand|visual style)\b|\b\d+\s*slides?\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -127,6 +166,14 @@ def classify_intent(prompt: str) -> str:
     text = " ".join((prompt or "").strip().split())
     if IMAGE_REQUEST_RE.search(text) and not IMAGE_SOFTWARE_RE.search(text):
         return "image_generation"
+    if PRESENTATION_REQUEST_RE.search(text):
+        return "presentation"
+    if DATA_ANALYSIS_REQUEST_RE.search(text):
+        return "data_analysis"
+    if RESEARCH_REQUEST_RE.search(text):
+        return "research"
+    if WRITING_REQUEST_RE.search(text):
+        return "writing"
     if re.search(r"\bfix\b", text, re.IGNORECASE):
         return "bug_fix"
     if re.search(r"\bdeploy\b", text, re.IGNORECASE):
@@ -190,6 +237,36 @@ def suggest_rewrite(prompt: str, intent: str | None = None) -> str:
             f"Create a [photorealistic/illustrated/3D] image of {subject} with "
             "[key colors, materials, and distinctive details], in [setting/background], "
             "viewed from [camera angle/composition], with [lighting/mood], in [aspect ratio]."
+        )
+
+    if intent == "writing":
+        return (
+            f"{text.rstrip('.!?')}. Audience: [who will read it]. "
+            "Purpose: [what the writing should accomplish]. "
+            "Include/exclude: [key points and boundaries]. "
+            "Tone, length, and format: [style, word count, and output shape]."
+        )
+
+    if intent == "research":
+        return (
+            f"{text.rstrip('.!?')}. Research question: [specific decision or question to answer]. "
+            "Scope: [sources, date range, geography, and exclusions]. "
+            "Compare using [criteria]. Output as [summary/table/recommendation] with [citation needs]."
+        )
+
+    if intent == "data_analysis":
+        return (
+            f"{text.rstrip('.!?')}. Dataset: [file/table/source and relevant columns]. "
+            "Question: [metric, segment, or trend to analyze]. "
+            "Output: [chart/table/summary] and validate with [method or expected checks]."
+        )
+
+    if intent == "presentation":
+        return (
+            f"{text.rstrip('.!?')}. Audience: [who will see it]. "
+            "Goal: [decision, update, pitch, or teaching outcome]. "
+            "Storyline: [key sections and takeaways]. "
+            "Format: [slide count, style, speaker notes, and constraints]."
         )
 
     make_better = re.fullmatch(r"make\s+(.+?)\s+better[.!?]?", text, re.IGNORECASE)
@@ -291,6 +368,11 @@ def analyze_prompt(
     is_creative = bool(CREATIVE_RE.search(text))
     intent = classify_intent(text)
     is_image_request = intent == "image_generation"
+    is_writing_request = intent == "writing"
+    is_research_request = intent == "research"
+    is_data_request = intent == "data_analysis"
+    is_presentation_request = intent == "presentation"
+    is_content_request = intent in {"writing", "research", "data_analysis", "presentation"}
     action_matches = ACTION_RE.findall(text)
     is_action = bool(action_matches)
 
@@ -323,10 +405,10 @@ def analyze_prompt(
     if vague_terms:
         ambiguity += min(28, 12 + 4 * len(vague_terms))
         reasons.append("subjective or vague language: " + ", ".join(vague_terms[:4]))
-        if not is_image_request:
+        if not is_image_request and not is_content_request:
             questions.append("What observable result would count as the desired improvement?")
 
-    if is_action and not has_anchor and not is_image_request:
+    if is_action and not has_anchor and not is_image_request and not is_content_request:
         ambiguity += 18
         reasons.append("no concrete file, component, URL, issue, or identifier")
         questions.append("What should this apply to—specific files/components, or the whole project?")
@@ -367,17 +449,91 @@ def analyze_prompt(
                 "What setting, camera angle/composition, lighting, and aspect ratio should the image use?"
             )
 
-    if has_broad_scope and not is_image_request:
+    if is_writing_request:
+        has_audience = bool(AUDIENCE_RE.search(text))
+        has_goal = bool(GOAL_RE.search(text))
+        has_source = bool(SOURCE_RE.search(text))
+        has_tone_or_length = bool(TONE_RE.search(text) or LENGTH_RE.search(text) or has_format)
+
+        if not has_audience:
+            ambiguity += 10
+            reasons.append("no writing audience")
+            questions.append("Who is the audience, and what should they do or understand after reading it?")
+        if not has_goal or not has_source:
+            ambiguity += 12
+            reasons.append("writing purpose or source material is underspecified")
+            questions.append("What key points, source material, and boundaries should be included or excluded?")
+        if not has_tone_or_length:
+            ambiguity += 10
+            reasons.append("writing tone, length, or format is underspecified")
+            questions.append("What tone, length, and format should the writing use?")
+
+    if is_research_request:
+        has_goal = bool(GOAL_RE.search(text) or QUESTION_RE.match(text))
+        has_sources = bool(RESEARCH_SOURCE_RE.search(text))
+        has_criteria = bool(CRITERIA_RE.search(text) or has_format)
+
+        if not has_goal:
+            ambiguity += 10
+            reasons.append("no specific research question")
+            questions.append("What decision or question should the research answer?")
+        if not has_sources:
+            ambiguity += 10
+            reasons.append("research sources or scope are underspecified")
+            questions.append("What sources, date range, geography, and exclusions should be used?")
+        if not has_criteria:
+            ambiguity += 10
+            reasons.append("research criteria or output format is underspecified")
+            questions.append("What comparison criteria and output format do you want?")
+
+    if is_data_request:
+        has_dataset = bool(DATASET_RE.search(text) or has_anchor)
+        has_metric = bool(METRIC_RE.search(text))
+        has_output = bool(has_format or re.search(r"\b(chart|graph|dashboard|summary|report|table)\b", text, re.IGNORECASE))
+
+        if not has_dataset:
+            ambiguity += 12
+            reasons.append("no dataset or data source")
+            questions.append("What dataset, file, table, or columns should be analyzed?")
+        if not has_metric:
+            ambiguity += 10
+            reasons.append("analysis question or metric is underspecified")
+            questions.append("What question, metric, segment, or trend should the analysis answer?")
+        if not has_output:
+            ambiguity += 8
+            reasons.append("analysis output format is underspecified")
+            questions.append("What output do you want—chart, table, summary, dashboard, or code?")
+
+    if is_presentation_request:
+        has_audience = bool(AUDIENCE_RE.search(text))
+        has_goal = bool(GOAL_RE.search(text))
+        has_story = bool(PRESENTATION_STORY_RE.search(text))
+        has_deck_format = bool(PRESENTATION_FORMAT_RE.search(text) or has_format)
+
+        if not has_audience:
+            ambiguity += 12
+            reasons.append("no presentation audience")
+            questions.append("Who is the audience, and what decision or takeaway should the presentation drive?")
+        if not has_goal or not has_story:
+            ambiguity += 14
+            reasons.append("presentation goal or storyline is underspecified")
+            questions.append("What key message, sections, and takeaways should the deck include?")
+        if not has_deck_format:
+            ambiguity += 8
+            reasons.append("presentation format is underspecified")
+            questions.append("How many slides, what visual style, and do you need speaker notes?")
+
+    if has_broad_scope and not is_image_request and not is_content_request:
         ambiguity += 14
         impact += 20
         reasons.append("broad scope")
 
-    if is_action and not is_image_request and (has_broad_scope or has_high_impact) and not has_constraint:
+    if is_action and not is_image_request and not is_content_request and (has_broad_scope or has_high_impact) and not has_constraint:
         ambiguity += 10
         reasons.append("no boundaries or invariants")
         questions.append("What must remain unchanged, and are there technical or product constraints?")
 
-    if is_action and not is_image_request and (has_broad_scope or has_high_impact or vague_terms) and not has_success:
+    if is_action and not is_image_request and not is_content_request and (has_broad_scope or has_high_impact or vague_terms) and not has_success:
         ambiguity += 8
         reasons.append("no verification or success criteria")
         questions.append("How should completion be verified—tests, examples, or acceptance criteria?")
@@ -399,6 +555,8 @@ def analyze_prompt(
         impact += 35
     if is_image_request:
         impact += 20
+    if is_content_request:
+        impact += 25
     if is_action and not has_anchor and intent in {"bug_fix", "software_build", "general_action"}:
         impact += 15
     if re.search(r"\b(build|create|deploy|migrate|redesign|rewrite)\b", text, re.IGNORECASE):

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   vague-prompts:
-    name: 100 vague prompts
+    name: expanded vague prompts
     runs-on: ubuntu-latest
 
     steps:

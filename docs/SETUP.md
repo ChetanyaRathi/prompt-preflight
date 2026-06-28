@@ -40,12 +40,25 @@ Expected result: `Clear to send` with exit code `0`.
 
 ## Run the benchmark
 
-The repo includes a deterministic benchmark with 100 intentionally vague prompts. It checks how often Prompt Preflight pauses prompts that are likely to cause expensive retry loops.
+The repo includes a deterministic benchmark with 150 intentionally vague prompts. It checks how often Prompt Preflight pauses prompts that are likely to cause expensive retry loops across software work, image generation, writing, research, data analysis, and presentations.
+
+The canonical prompt library is shared by Codex, Claude Code, Kiro, the CLI, and the benchmark:
+
+```text
+src/prompt_preflight/data/vague_prompts.txt
+```
 
 Run:
 
 ```bash
 python3 scripts/benchmark_vague_prompts.py
+```
+
+Run the benchmark against another newline-based prompt library:
+
+```bash
+python3 scripts/benchmark_vague_prompts.py \
+  --library-path path/to/vague_prompts.txt
 ```
 
 Save a full JSON report:

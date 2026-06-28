@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark Prompt Preflight against a fixed set of vague prompts.
+"""Benchmark Prompt Preflight against the shared vague prompt library.
 
 The benchmark is intentionally local and deterministic: no model calls, no API
 keys, no network. It is meant to catch regressions in Prompt Preflight's ability
@@ -21,112 +21,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from prompt_preflight.analyzer import analyze_prompt  # noqa: E402
+from prompt_preflight.vague_prompt_library import load_vague_prompts  # noqa: E402
 
 
-BENCHMARK_VERSION = "2026-06-22"
+BENCHMARK_VERSION = "2026-06-28"
 
-VAGUE_PROMPTS: tuple[str, ...] = (
-    "Fix it",
-    "Make it better",
-    "Improve the dashboard",
-    "Clean up the code",
-    "Optimize the database",
-    "Deploy this to production",
-    "Build a todo app",
-    "Create an admin panel",
-    "Implement auth",
-    "Add better payments",
-    "Rewrite the backend",
-    "Refactor everything",
-    "Modernize the UI",
-    "Make the app faster",
-    "Fix the login bug",
-    "Update the API",
-    "Upgrade the whole project",
-    "Migrate the database",
-    "Remove the bad code",
-    "Rename things properly",
-    "Replace this with a better version",
-    "Integrate Stripe properly",
-    "Build a chat feature",
-    "Create a reporting system",
-    "Design a better homepage",
-    "Generate better documentation",
-    "Polish the landing page",
-    "Make onboarding user-friendly",
-    "Improve error handling",
-    "Fix the flaky tests",
-    "Optimize performance",
-    "Deploy the app",
-    "Build a CRM",
-    "Create a mobile app",
-    "Implement permissions",
-    "Add notifications everywhere",
-    "Rewrite the frontend",
-    "Refactor the auth flow",
-    "Modernize the entire codebase",
-    "Make the API robust",
-    "Fix checkout",
-    "Update the schema",
-    "Upgrade dependencies",
-    "Migrate users",
-    "Remove unused stuff",
-    "Rename this module",
-    "Replace the old system",
-    "Integrate analytics",
-    "Build a settings page",
-    "Create a billing system",
-    "Design the dashboard",
-    "Generate a nice report",
-    "Polish the UI",
-    "Make search better",
-    "Improve scalability",
-    "Fix production issue",
-    "Optimize costs",
-    "Deploy backend to prod",
-    "Build an image generation API",
-    "Create an image processing app",
-    "Implement caching",
-    "Add security everywhere",
-    "Rewrite the whole repo",
-    "Refactor database layer",
-    "Modernize authentication",
-    "Make forms nicer",
-    "Fix accessibility",
-    "Update permissions",
-    "Upgrade infrastructure",
-    "Migrate billing",
-    "Remove security risk",
-    "Rename bad variables",
-    "Replace auth",
-    "Integrate OAuth",
-    "Build a workflow",
-    "Create a plugin",
-    "Design a better settings screen",
-    "Generate more tests",
-    "Polish docs",
-    "Make deployment safer",
-    "Improve this component",
-    "Fix this bug",
-    "Optimize this query",
-    "Deploy everything",
-    "Build the full app",
-    "Create a good API",
-    "Implement the feature",
-    "Add robust validation",
-    "Rewrite all tests",
-    "Refactor this",
-    "Create a car image",
-    "Generate a logo",
-    "Draw a cat",
-    "Illustrate a hero image",
-    "Make a product photo",
-    "Paint a portrait",
-    "Render a house",
-    "Create a poster",
-    "Generate an icon",
-    "Draw a landscape",
-)
+VAGUE_PROMPTS: tuple[str, ...] = load_vague_prompts()
 
 
 def _rate(part: int, whole: int) -> float:
@@ -227,7 +127,7 @@ def print_summary(summary: dict[str, Any], *, show_missed: int = 10) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the fixed 100-prompt vague-prompt benchmark.",
+        description="Run the fixed 150-prompt vague-prompt benchmark.",
     )
     parser.add_argument("--threshold", type=int, default=45, help="Clarification threshold")
     parser.add_argument("--max-questions", type=int, default=3, help="Maximum questions per prompt")
@@ -243,6 +143,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional path for complete benchmark results as JSON",
     )
     parser.add_argument(
+        "--library-path",
+        type=Path,
+        help="Optional path to a newline-based vague prompt library",
+    )
+    parser.add_argument(
         "--show-missed",
         type=int,
         default=10,
@@ -253,7 +158,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    summary = run_benchmark(threshold=args.threshold, max_questions=args.max_questions)
+    prompts = load_vague_prompts(args.library_path) if args.library_path else VAGUE_PROMPTS
+    summary = run_benchmark(
+        prompts=prompts,
+        threshold=args.threshold,
+        max_questions=args.max_questions,
+    )
     print_summary(summary, show_missed=max(0, args.show_missed))
 
     if args.json_output:

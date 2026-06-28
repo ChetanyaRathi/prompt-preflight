@@ -10,6 +10,12 @@ Prompt Preflight is a local Codex plugin, Claude Code plugin, Kiro hook, and sta
 
 The check uses deterministic Python rules. It makes no network requests and calls no model.
 
+## Prompt examples and templates
+
+When Prompt Preflight catches a vague prompt, it links to [vague prompt examples and templates](docs/EXAMPLES.md). The examples page includes common vague prompts for bug fixes, new features, refactors, UI work, performance, deployment, tests, documentation, security, analytics, image generation, writing, research, data analysis, and presentations.
+
+The canonical vague-prompt library lives in [`src/prompt_preflight/data/vague_prompts.txt`](src/prompt_preflight/data/vague_prompts.txt). Codex, Claude Code, Kiro, the CLI, and the benchmark all use the same Python package, so new vague-prompt examples should be added there instead of creating tool-specific lists.
+
 ## Help the project grow
 
 If Prompt Preflight saves you even one failed agent turn, please consider starring the repo. Stars make it easier for other Codex, Claude Code, and Kiro users to discover the project, and they help signal which integrations are worth building next.
@@ -144,7 +150,7 @@ The model receives a target, outcome, boundaries, and definition of done before 
 - Runs before a Codex, Claude Code, or Kiro model turn through `UserPromptSubmit`.
 - Uses no model, API key, network access, or external service.
 - Routes prompts by domain before selecting feedback.
-- Includes software and image-generation feedback profiles.
+- Includes software, image-generation, and content feedback profiles.
 - Shows a tailored rewrite instead of only saying “be more specific.”
 - Asks at most three high-value questions.
 - Lets clear prompts and conversational follow-ups pass through.
@@ -170,8 +176,12 @@ Current domain profiles include:
 - Optimization
 - Deployment and migration
 - Image generation
+- Writing
+- Research
+- Data analysis
+- Presentations
 
-Unsupported domains use a conservative fallback rather than receiving software-specific questions.
+Unsupported domains use a conservative fallback rather than receiving software-specific questions. Content domains such as writing, research, data analysis, and presentations receive audience, source, output, and quality-bar questions instead of file/component or platform-stack questions.
 
 ## Quick local test
 
@@ -198,12 +208,25 @@ Structured output includes the detected `intent`, ambiguity score, impact score,
 
 ## Benchmark vague-prompt detection
 
-Prompt Preflight includes a fixed benchmark of 100 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, and image generation.
+Prompt Preflight includes a fixed benchmark of 150 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
+
+The benchmark reads from the shared vague-prompt library:
+
+```text
+src/prompt_preflight/data/vague_prompts.txt
+```
 
 Run it locally:
 
 ```bash
 python3 scripts/benchmark_vague_prompts.py
+```
+
+Run it against another newline-based prompt library:
+
+```bash
+python3 scripts/benchmark_vague_prompts.py \
+  --library-path path/to/vague_prompts.txt
 ```
 
 Save complete results as JSON:
@@ -242,11 +265,26 @@ Render a house
 
 should receive image-generation feedback, not software-project feedback. The analyzer now treats common visual render prompts as image-generation requests so the user gets questions about style, composition, lighting, and output format instead of files, components, or platform stack.
 
+The expanded benchmark now covers content work too. Prompts like:
+
+```text
+Write a better intro
+Research this topic
+Analyze the data
+Create a presentation
+```
+
+should receive content-specific feedback about audience, source material, research scope, metrics, output format, deck storyline, and slide constraints.
+
 With the current default threshold, the benchmark catches:
 
 ```text
-98 / 100 vague prompts
-10 / 10 image-generation prompts
+148 / 150 vague prompts
+11 / 11 image-generation prompts
+11 / 11 writing prompts
+10 / 10 research prompts
+12 / 12 data-analysis prompts
+11 / 11 presentation prompts
 ```
 
 The two current misses are:
@@ -260,7 +298,7 @@ These misses are useful calibration cases. They show why the benchmark is not ju
 
 This is a regression guard, not a token-savings guarantee. The benchmark consumes zero model tokens and helps catch changes that would let vague, costly prompts slip through.
 
-The repository also includes a GitHub Actions workflow at `.github/workflows/benchmark.yml`. It runs the unit tests and the 100-prompt benchmark on pushes, pull requests, and manual workflow dispatch.
+The repository also includes a GitHub Actions workflow at `.github/workflows/benchmark.yml`. It runs the unit tests and the expanded vague-prompt benchmark on pushes, pull requests, and manual workflow dispatch.
 
 ## Install
 
@@ -574,8 +612,8 @@ The project currently has regression coverage for vague and detailed prompts, do
 
 ## Roadmap
 
-- Token and retry savings telemetry
-- More domain profiles, including writing, research, data analysis, and presentations
+- Richer telemetry reports and trend views
+- More domain profiles beyond software, image generation, writing, research, data analysis, and presentations
 - User-defined terminology and intent rules
 - Per-domain thresholds
 - More host adapters beyond Codex, Claude Code, and Kiro
