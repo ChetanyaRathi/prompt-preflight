@@ -27,10 +27,10 @@ class BenchmarkVaguePromptTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.benchmark = _load_benchmark_module()
 
-    def test_benchmark_has_150_unique_prompts(self) -> None:
+    def test_benchmark_has_168_unique_prompts(self) -> None:
         prompts = self.benchmark.VAGUE_PROMPTS
-        self.assertEqual(len(prompts), 150)
-        self.assertEqual(len(set(prompts)), 150)
+        self.assertEqual(len(prompts), 168)
+        self.assertEqual(len(set(prompts)), 168)
 
     def test_benchmark_uses_shared_vague_prompt_library(self) -> None:
         self.assertEqual(self.benchmark.VAGUE_PROMPTS, load_vague_prompts())

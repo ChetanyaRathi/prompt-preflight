@@ -208,7 +208,7 @@ Structured output includes the detected `intent`, ambiguity score, impact score,
 
 ## Benchmark vague-prompt detection
 
-Prompt Preflight includes a fixed benchmark of 150 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
+Prompt Preflight includes a fixed benchmark of 168 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
 
 The benchmark reads from the shared vague-prompt library:
 
@@ -279,12 +279,12 @@ should receive content-specific feedback about audience, source material, resear
 With the current default threshold, the benchmark catches:
 
 ```text
-148 / 150 vague prompts
-11 / 11 image-generation prompts
-11 / 11 writing prompts
-10 / 10 research prompts
+166 / 168 vague prompts
+12 / 12 image-generation prompts
+12 / 12 writing prompts
+11 / 11 research prompts
 12 / 12 data-analysis prompts
-11 / 11 presentation prompts
+13 / 13 presentation prompts
 ```
 
 The two current misses are:

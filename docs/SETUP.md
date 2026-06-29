@@ -40,7 +40,7 @@ Expected result: `Clear to send` with exit code `0`.
 
 ## Run the benchmark
 
-The repo includes a deterministic benchmark with 150 intentionally vague prompts. It checks how often Prompt Preflight pauses prompts that are likely to cause expensive retry loops across software work, image generation, writing, research, data analysis, and presentations.
+The repo includes a deterministic benchmark with 168 intentionally vague prompts. It checks how often Prompt Preflight pauses prompts that are likely to cause expensive retry loops across software work, image generation, writing, research, data analysis, and presentations.
 
 The canonical prompt library is shared by Codex, Claude Code, Kiro, the CLI, and the benchmark:
 
