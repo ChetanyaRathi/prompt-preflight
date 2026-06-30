@@ -20,22 +20,46 @@ class Config:
     telemetry_path: Path | None = None
 
 
-def _telemetry_settings(raw: dict[str, Any], directory: Path) -> tuple[bool, Path | None]:
+def _telemetry_path_from_raw(raw: dict[str, Any], directory: Path) -> Path:
     telemetry = raw.get("telemetry", False)
     if isinstance(telemetry, dict):
-        enabled = bool(telemetry.get("enabled", False))
         path_value = telemetry.get("path", DEFAULT_TELEMETRY_FILE)
     else:
-        enabled = bool(telemetry)
         path_value = DEFAULT_TELEMETRY_FILE
-
-    if not enabled:
-        return False, None
 
     path = Path(str(path_value)).expanduser()
     if not path.is_absolute():
         path = directory / path
-    return True, path
+    return path
+
+
+def _telemetry_settings(raw: dict[str, Any], directory: Path) -> tuple[bool, Path | None]:
+    telemetry = raw.get("telemetry", False)
+    if isinstance(telemetry, dict):
+        enabled = bool(telemetry.get("enabled", False))
+    else:
+        enabled = bool(telemetry)
+
+    if not enabled:
+        return False, None
+
+    return True, _telemetry_path_from_raw(raw, directory)
+
+
+def resolve_telemetry_report_path(cwd: str | Path | None = None) -> Path:
+    """Return the telemetry file path for reporting from project config."""
+
+    start = Path(cwd or Path.cwd()).resolve()
+    for directory in [start, *start.parents]:
+        config_path = directory / ".prompt-preflight.json"
+        if not config_path.is_file():
+            continue
+        try:
+            raw: dict[str, Any] = json.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            break
+        return _telemetry_path_from_raw(raw, directory)
+    return start / DEFAULT_TELEMETRY_FILE
 
 
 def load_config(cwd: str | Path | None = None) -> Config:

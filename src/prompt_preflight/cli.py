@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from .analyzer import analyze_prompt
+from .config import resolve_telemetry_report_path
 from .hook import clarification_message
 from .telemetry import (
     DEFAULT_TELEMETRY_FILE,
@@ -38,11 +39,16 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Telemetry JSONL path (default: {DEFAULT_TELEMETRY_FILE})",
     )
     parser.add_argument(
+        "--cwd",
+        type=Path,
+        help="Project directory for config lookup (telemetry report)",
+    )
+    parser.add_argument(
         "--telemetry-report",
         nargs="?",
-        const=DEFAULT_TELEMETRY_FILE,
+        const="",
         metavar="PATH",
-        help="Print a local telemetry report and exit",
+        help="Print a local telemetry report and exit; discovers path from .prompt-preflight.json when omitted",
     )
     return parser
 
@@ -51,7 +57,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     if args.telemetry_report is not None:
-        report_path = Path(args.telemetry_report)
+        if args.telemetry_report:
+            report_path = Path(args.telemetry_report)
+        else:
+            report_path = resolve_telemetry_report_path(args.cwd)
         summary = summarize_events(read_events(report_path))
         if args.as_json:
             print(json.dumps(summary, indent=2))

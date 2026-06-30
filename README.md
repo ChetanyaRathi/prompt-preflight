@@ -152,6 +152,7 @@ The model receives a target, outcome, boundaries, and definition of done before 
 - Routes prompts by domain before selecting feedback.
 - Includes software, image-generation, and content feedback profiles.
 - Shows a tailored rewrite instead of only saying “be more specific.”
+- Structures rewrites around task, context, output format, examples, and self-checks.
 - Asks at most three high-value questions.
 - Lets clear prompts and conversational follow-ups pass through.
 - Supports a one-time `[preflight:skip]` bypass.
@@ -294,7 +295,9 @@ Fix the flaky tests
 Generate more tests
 ```
 
-These misses are useful calibration cases. They show why the benchmark is not just a vanity metric: it gives maintainers concrete prompts to discuss, tune, and convert into regression tests when the desired behavior is clear.
+are now caught by the output-format check. That check asks what the final result should look like when a short actionable prompt lacks structure, while avoiding false positives when the prompt already names a concrete file or source.
+
+These calibration cases show why the benchmark is not just a vanity metric: it gives maintainers concrete prompts to discuss, tune, and convert into regression tests when the desired behavior is clear.
 
 This is a regression guard, not a token-savings guarantee. The benchmark consumes zero model tokens and helps catch changes that would let vague, costly prompts slip through.
 
@@ -498,10 +501,16 @@ The telemetry file stores only aggregate fields:
 
 It does not store prompt text, suggested rewrites, clarification questions, reason strings, file contents, or conversation history.
 
-Generate a report:
+Generate a report from the project directory (or any parent directory that contains `.prompt-preflight.json`):
 
 ```bash
 python3 scripts/prompt_preflight.py --telemetry-report
+```
+
+When no path is passed, the command loads `.prompt-preflight.json` and uses the configured `telemetry.path`. To point at a different project directory:
+
+```bash
+python3 scripts/prompt_preflight.py --cwd /path/to/project --telemetry-report
 ```
 
 Generate JSON:
@@ -510,7 +519,7 @@ Generate JSON:
 python3 scripts/prompt_preflight.py --telemetry-report --json
 ```
 
-If you configured a custom telemetry path, pass it to the report command:
+You can still pass an explicit telemetry file path:
 
 ```bash
 python3 scripts/prompt_preflight.py \

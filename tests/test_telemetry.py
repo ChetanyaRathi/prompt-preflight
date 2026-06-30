@@ -5,13 +5,16 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from io import StringIO
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from prompt_preflight.analyzer import analyze_prompt
-from prompt_preflight.config import load_config
+from prompt_preflight.cli import main
+from prompt_preflight.config import load_config, resolve_telemetry_report_path
 from prompt_preflight.telemetry import (
     read_events,
     record_analysis,
@@ -101,6 +104,127 @@ class TelemetryTests(unittest.TestCase):
             config = load_config(root)
         self.assertTrue(config.telemetry_enabled)
         self.assertEqual(config.telemetry_path, root.resolve() / "local-telemetry.jsonl")
+
+    def test_resolve_telemetry_report_path_uses_configured_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "path": "local-telemetry.jsonl"}}),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                resolve_telemetry_report_path(root),
+                root.resolve() / "local-telemetry.jsonl",
+            )
+
+    def test_resolve_telemetry_report_path_when_telemetry_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps(
+                    {
+                        "telemetry": {
+                            "enabled": False,
+                            "path": "archived-telemetry.jsonl",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                resolve_telemetry_report_path(root),
+                root.resolve() / "archived-telemetry.jsonl",
+            )
+
+    def test_resolve_telemetry_report_path_falls_back_to_default(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertEqual(
+                resolve_telemetry_report_path(root),
+                root.resolve() / ".prompt-preflight-telemetry.jsonl",
+            )
+
+
+class TelemetryReportCliTests(unittest.TestCase):
+    def _write_event(self, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "decision": "blocked",
+                    "host": "codex",
+                    "intent": "software_build",
+                    "score": 60,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    def test_telemetry_report_default_path_without_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            telemetry_path = root / ".prompt-preflight-telemetry.jsonl"
+            self._write_event(telemetry_path)
+            stdout = StringIO()
+            with patch("sys.stdout", stdout):
+                code = main(["--cwd", str(root), "--telemetry-report"])
+            self.assertEqual(code, 0)
+            self.assertIn("Prompts checked: 1", stdout.getvalue())
+            self.assertIn(str(telemetry_path.resolve()), stdout.getvalue())
+
+    def test_telemetry_report_discovers_path_from_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            telemetry_path = root / "project-telemetry.jsonl"
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "path": "project-telemetry.jsonl"}}),
+                encoding="utf-8",
+            )
+            self._write_event(telemetry_path)
+            stdout = StringIO()
+            with patch("sys.stdout", stdout):
+                code = main(["--cwd", str(root), "--telemetry-report"])
+            self.assertEqual(code, 0)
+            self.assertIn("Prompts checked: 1", stdout.getvalue())
+            self.assertIn(str(telemetry_path.resolve()), stdout.getvalue())
+
+    def test_telemetry_report_uses_explicit_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            configured_path = root / "configured.jsonl"
+            explicit_path = root / "explicit.jsonl"
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "path": "configured.jsonl"}}),
+                encoding="utf-8",
+            )
+            self._write_event(configured_path)
+            self._write_event(explicit_path)
+            stdout = StringIO()
+            with patch("sys.stdout", stdout):
+                code = main(["--cwd", str(root), "--telemetry-report", str(explicit_path)])
+            self.assertEqual(code, 0)
+            report = stdout.getvalue()
+            self.assertIn("Prompts checked: 1", report)
+            self.assertIn(explicit_path.name, report)
+            self.assertNotIn(configured_path.name, report)
+
+    def test_telemetry_report_resolves_config_with_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "my-project"
+            project.mkdir()
+            telemetry_path = project / "project-telemetry.jsonl"
+            Path(project, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "path": "project-telemetry.jsonl"}}),
+                encoding="utf-8",
+            )
+            self._write_event(telemetry_path)
+            stdout = StringIO()
+            with patch("sys.stdout", stdout):
+                code = main(["--cwd", str(project), "--telemetry-report"])
+            self.assertEqual(code, 0)
+            self.assertIn(str(telemetry_path.resolve()), stdout.getvalue())
 
 
 if __name__ == "__main__":

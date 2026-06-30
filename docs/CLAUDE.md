@@ -196,10 +196,16 @@ If telemetry is enabled, use Claude Code normally. Prompt Preflight writes promp
 .prompt-preflight-telemetry.jsonl
 ```
 
-View the report from the `prompt-preflight` folder:
+View the report from the project directory (or any parent directory that contains `.prompt-preflight.json`):
 
 ```bash
 python3 scripts/prompt_preflight.py --telemetry-report
+```
+
+When no path is passed, the command loads `.prompt-preflight.json` and uses the configured `telemetry.path`. To point at a different project directory:
+
+```bash
+python3 scripts/prompt_preflight.py --cwd /path/to/project --telemetry-report
 ```
 
 View JSON:
@@ -208,7 +214,7 @@ View JSON:
 python3 scripts/prompt_preflight.py --telemetry-report --json
 ```
 
-If you configured a custom path:
+You can still pass an explicit telemetry file path:
 
 ```bash
 python3 scripts/prompt_preflight.py \
