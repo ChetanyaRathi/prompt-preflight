@@ -39,6 +39,7 @@ def process_payload(payload: dict[str, Any]) -> tuple[int, str, str]:
         prompt,
         threshold=config.threshold,
         max_questions=config.max_questions,
+        cwd=payload.get("cwd"),
     )
     record_analysis_safely(
         analysis,
@@ -54,7 +55,7 @@ def process_payload(payload: dict[str, Any]) -> tuple[int, str, str]:
         return (
             0,
             nudge_message(
-                analysis.prompt,
+                analysis.redacted_prompt or analysis.prompt,
                 analysis.suggested_prompt or prompt,
                 analysis.questions,
             ),

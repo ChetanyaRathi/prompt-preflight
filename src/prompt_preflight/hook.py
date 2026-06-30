@@ -15,17 +15,27 @@ EXAMPLES_URL = "https://github.com/akg268/prompt-preflight/blob/main/docs/EXAMPL
 
 
 def clarification_message(analysis: Analysis) -> str:
+    display_prompt = analysis.redacted_prompt or analysis.prompt
     lines = [
-        f"Prompt Preflight paused this request (clarification score {analysis.score}/100).",
-        "",
-        "Your prompt:",
-        f'  "{analysis.prompt}"',
-        "",
-        "Try asking:",
-        f'  "{analysis.suggested_prompt}"',
-        "",
-        "Fill in the brackets by answering:",
+        (
+            f"Prompt Preflight paused this request "
+            f"(clarification score {analysis.score}/100, severity: {analysis.severity})."
+        ),
     ]
+    if analysis.checks:
+        lines.extend(["", "Checks triggered:", "  " + ", ".join(analysis.checks)])
+    lines.extend(
+        [
+            "",
+            "Your prompt:",
+            f'  "{display_prompt}"',
+            "",
+            "Try asking:",
+            f'  "{analysis.suggested_prompt}"',
+            "",
+            "Fill in the brackets by answering:",
+        ]
+    )
     lines.extend(f"{index}. {question}" for index, question in enumerate(analysis.questions, 1))
     lines.extend(
         [
@@ -51,6 +61,7 @@ def process_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
         prompt,
         threshold=config.threshold,
         max_questions=config.max_questions,
+        cwd=payload.get("cwd"),
     )
     record_analysis_safely(
         analysis,

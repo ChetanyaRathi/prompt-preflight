@@ -33,6 +33,7 @@ def process_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
         prompt,
         threshold=config.threshold,
         max_questions=config.max_questions,
+        cwd=payload.get("cwd"),
     )
     record_analysis_safely(
         analysis,

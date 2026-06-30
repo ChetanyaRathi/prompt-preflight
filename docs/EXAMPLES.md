@@ -6,6 +6,8 @@ Use these patterns when Prompt Preflight pauses a request. Fill in the brackets,
 
 The canonical benchmark prompt library lives at [`src/prompt_preflight/data/vague_prompts.txt`](../src/prompt_preflight/data/vague_prompts.txt). Add new vague-prompt examples there first so Codex, Claude Code, Kiro, and the benchmark stay aligned.
 
+Prompt Preflight also checks for likely secrets, missing context, missing output contracts, and high-risk work that should start with a plan.
+
 ## Quick formula
 
 Most useful prompts answer four questions:
@@ -34,6 +36,19 @@ Example/style reference:
 
 Self-check:
 [how to verify constraints, citations, tests, or acceptance criteria]
+```
+
+For high-risk prompts, add a plan-first boundary:
+
+```text
+Plan-first:
+Inspect the relevant context, propose the rollout or change plan, and wait for confirmation before making production, migration, destructive, or broad repository changes.
+```
+
+Never paste real secrets into prompts. Use placeholders instead:
+
+```text
+Use [REDACTED_SECRET] as the example API key.
 ```
 
 For image prompts, use:

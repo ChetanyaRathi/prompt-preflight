@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from pathlib import Path
 import re
 from typing import Iterable
 
@@ -11,10 +12,10 @@ BYPASS_MARKERS = ("[preflight:skip]", "#preflight-ignore", "/preflight-skip")
 
 ACTION_RE = re.compile(
     r"\b(add|analy[sz]e|build|calculate|change|clean(?:\s*up)?|compare|convert|create|"
-    r"deploy|design|draft|draw|edit|evaluate|find|fix|generate|illustrate|implement|"
+    r"delete|deploy|design|destroy|draft|draw|drop|edit|evaluate|find|fix|generate|illustrate|implement|"
     r"improve|integrate|investigate|look\s+into|make|migrate|modernize|optimi[sz]e|outline|paint|"
-    r"polish|prepare|proofread|refactor|remove|rename|render|replace|research|rewrite|"
-    r"ship|summari[sz]e|update|upgrade|visuali[sz]e|write)\b",
+    r"polish|prepare|proofread|purge|refactor|remove|rename|render|replace|research|reset|rewrite|"
+    r"ship|summari[sz]e|truncate|update|upgrade|visuali[sz]e|write)\b",
     re.IGNORECASE,
 )
 VAGUE_RE = re.compile(
@@ -31,6 +32,19 @@ BROAD_RE = re.compile(
 HIGH_IMPACT_RE = re.compile(
     r"\b(auth(?:entication|orization)?|billing|database|deploy|infrastructure|"
     r"migration|payments?|permissions?|production|security|schema)\b",
+    re.IGNORECASE,
+)
+PRODUCTION_RE = re.compile(r"\b(prod(?:uction)?|live|customer[- ]facing)\b", re.IGNORECASE)
+DESTRUCTIVE_RE = re.compile(
+    r"\b(delete|destroy|drop|purge|remove|reset|truncate)\b", re.IGNORECASE
+)
+ROLLBACK_RE = re.compile(
+    r"\b(backup|canary|dry[- ]run|feature flag|health checks?|rollback|roll back|smoke tests?)\b",
+    re.IGNORECASE,
+)
+PLAN_FIRST_RE = re.compile(
+    r"\b(ask before|confirm before|do not (?:change|deploy|edit|run)|dry[- ]run|"
+    r"plan first|propose (?:a )?plan|review before|wait for confirmation)\b",
     re.IGNORECASE,
 )
 CONSTRAINT_RE = re.compile(
@@ -97,7 +111,7 @@ IMAGE_FORMAT_RE = re.compile(
 WRITING_REQUEST_RE = re.compile(
     r"\b(?:create|draft|edit|improve|rewrite|write|proofread|polish|summari[sz]e|make)\b.*\b(?:announcement|"
     r"article|blog|case study|copy|doc(?:ument)?|draft|email|essay|intro(?:duction)?|memo|message|newsletter|"
-    r"proposal|readme|report|summary|tone|writing)\b|\bmake\s+this\s+sound\b|"
+    r"press release|proposal|readme|report|summary|tone|writing)\b|\bmake\s+this\s+sound\b|"
     r"\bedit\s+this\s+for\s+clarity\b|\bsummari[sz]e\s+(?:it|this|the)\b",
     re.IGNORECASE,
 )
@@ -121,7 +135,7 @@ PRESENTATION_REQUEST_RE = re.compile(
 )
 AUDIENCE_RE = re.compile(r"\b(?:audience|for|to)\s+(?:[A-Za-z][\w-]+|the\s+\w+)", re.IGNORECASE)
 GOAL_RE = re.compile(r"\b(?:goal|purpose|so that|to help|decision|objective|call to action|cta)\b", re.IGNORECASE)
-SOURCE_RE = re.compile(r"\b(?:based on|source|include|exclude|from|using|according to|dataset|csv|spreadsheet|table)\b", re.IGNORECASE)
+SOURCE_RE = re.compile(r"\b(?:attached|based on|provided|source|include|exclude|from|using|according to|dataset|csv|spreadsheet|table)\b", re.IGNORECASE)
 TONE_RE = re.compile(r"\b(?:tone|voice|professional|casual|friendly|formal|concise|persuasive|technical)\b", re.IGNORECASE)
 LENGTH_RE = re.compile(r"\b(?:words?|pages?|paragraphs?|slides?|minutes?|short|brief|one-page|long-form)\b|\b\d+\s*(?:words?|pages?|slides?|minutes?)\b", re.IGNORECASE)
 RESEARCH_SOURCE_RE = re.compile(r"\b(?:sources?|citations?|recent|latest|peer[- ]reviewed|official|date range|from|exclude|include)\b", re.IGNORECASE)
@@ -130,6 +144,44 @@ DATASET_RE = re.compile(r"\b(?:csv|dataset|spreadsheet|table|columns?|rows?|file
 METRIC_RE = re.compile(r"\b(?:metric|kpi|revenue|churn|conversion|retention|sales|latency|count|average|median|p95|trend)\b", re.IGNORECASE)
 PRESENTATION_STORY_RE = re.compile(r"\b(?:story|narrative|outline|agenda|sections?|key message|takeaway|thesis)\b", re.IGNORECASE)
 PRESENTATION_FORMAT_RE = re.compile(r"\b(?:slides?|deck|speaker notes|talk track|minutes?|template|brand|visual style)\b|\b\d+\s*slides?\b", re.IGNORECASE)
+ATTACHMENT_CUE_RE = re.compile(
+    r"\b(?:attached|attachment|uploaded|provided|this|that|the)\s+"
+    r"(?:csv|data(?:set)?|deck|doc(?:ument)?|file|image|pdf|photo|screenshot|spreadsheet|transcript)\b|"
+    r"\b(?:attached|uploaded|provided)\b",
+    re.IGNORECASE,
+)
+FILE_REFERENCE_RE = re.compile(
+    r"(?<![\w:/.-])(?:[\w.-]+/)*[\w.-]+\."
+    r"(?:csv|docx?|json|md|pdf|png|jpe?g|pptx?|sql|tsv|txt|xlsx?)(?![\w.-])",
+    re.IGNORECASE,
+)
+INPUT_FILE_CUE_RE = re.compile(
+    r"\b(?:analy[sz]e|based on|compare|from|import|load|open|read|review|summari[sz]e|"
+    r"use|using|visuali[sz]e)\b",
+    re.IGNORECASE,
+)
+OUTPUT_FILE_PREFIX_RE = re.compile(r"\b(?:create|generate|output|save|write)\s+`?$", re.IGNORECASE)
+SENSITIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "private key",
+        re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.DOTALL),
+    ),
+    ("OpenAI-style API key", re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b")),
+    ("Anthropic-style API key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b")),
+    ("GitHub token", re.compile(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b")),
+    ("GitHub fine-grained token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
+    ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_-]{30,}\b")),
+    ("Slack token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b")),
+    (
+        "credential assignment",
+        re.compile(
+            r"\b(?:api[_-]?key|auth[_-]?token|password|secret|token)\s*[:=]\s*"
+            r"[\"']?[A-Za-z0-9_./+=:@%-]{8,}[\"']?",
+            re.IGNORECASE,
+        ),
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -144,9 +196,15 @@ class Analysis:
     intent: str = "general"
     suggested_prompt: str | None = None
     bypassed: bool = False
+    checks: tuple[str, ...] = ()
+    severity: str = "low"
+    redacted_prompt: str | None = None
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        data = asdict(self)
+        if self.redacted_prompt:
+            data["prompt"] = self.redacted_prompt
+        return data
 
 
 def _clamp(value: int) -> int:
@@ -159,6 +217,53 @@ def _words(prompt: str) -> list[str]:
 
 def _unique(items: Iterable[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(items))
+
+
+def sensitive_findings(prompt: str) -> tuple[str, ...]:
+    """Return names of likely secrets present in prompt text."""
+
+    findings: list[str] = []
+    for label, pattern in SENSITIVE_PATTERNS:
+        if pattern.search(prompt):
+            findings.append(label)
+    return _unique(findings)
+
+
+def redact_sensitive(prompt: str) -> str:
+    """Redact likely secrets before rendering user-facing preflight output."""
+
+    redacted = prompt
+    for _, pattern in SENSITIVE_PATTERNS:
+        redacted = pattern.sub("[REDACTED_SECRET]", redacted)
+    return redacted
+
+
+def _referenced_files(prompt: str) -> tuple[str, ...]:
+    files: list[str] = []
+    for match in FILE_REFERENCE_RE.finditer(prompt):
+        value = match.group(0).strip("`'\".,;:()[]{}")
+        prefix = prompt[max(0, match.start() - 24) : match.start()]
+        if OUTPUT_FILE_PREFIX_RE.search(prefix):
+            continue
+        files.append(value)
+    return _unique(files)
+
+
+def _missing_referenced_files(prompt: str, cwd: str | Path | None) -> tuple[str, ...]:
+    if cwd is None or not INPUT_FILE_CUE_RE.search(prompt):
+        return ()
+
+    root = Path(cwd).expanduser()
+    missing: list[str] = []
+    for file_name in _referenced_files(prompt):
+        candidate = Path(file_name)
+        if candidate.is_absolute():
+            exists = candidate.exists()
+        else:
+            exists = (root / candidate).exists()
+        if not exists:
+            missing.append(file_name)
+    return _unique(missing)
 
 
 def classify_intent(prompt: str) -> str:
@@ -230,6 +335,14 @@ def suggest_rewrite(prompt: str, intent: str | None = None) -> str:
     """Create a prompt-shaped example that preserves the user's likely intent."""
     text = " ".join((prompt or "").strip().split())
     intent = intent or classify_intent(text)
+
+    if intent == "privacy":
+        return (
+            "Task: Re-submit this request without secrets or private data. Context: replace any "
+            "API keys, tokens, passwords, customer data, or private keys with placeholders such as "
+            "[REDACTED_SECRET]. Output format: describe the goal and the safe placeholder values. "
+            "Self-check: rotate any real credential that was pasted into a chat or log."
+        )
 
     if intent == "image_generation":
         subject = _subject_phrase(_image_subject(text))
@@ -322,8 +435,18 @@ def suggest_rewrite(prompt: str, intent: str | None = None) -> str:
             f"Task: {action.capitalize()} {target} in [target environment/scope]. "
             "Context: [current version, dependencies, infra, or data shape]. Preserve "
             "[critical behavior or data]. Follow [rollout/rollback constraints]. Output format: "
-            "[plan, commands, migration script, or checklist]. Self-check: verify with "
+            "[plan, commands, migration script, or checklist]. Plan-first: propose the rollout and "
+            "wait for confirmation before changing production systems. Self-check: verify with "
             "[health checks or acceptance criteria]."
+        )
+
+    if action in {"delete", "destroy", "drop", "purge", "remove", "reset", "truncate"}:
+        return (
+            f"Task: {action.capitalize()} {target} in [specific environment/scope]. Context: "
+            "[why it is safe, backups, affected data, and owner approval]. Constraints: preserve "
+            "[data, behavior, or users that must not be affected]. Output format: [plan/checklist "
+            "first, then commands only after confirmation]. Self-check: verify with [dry run, "
+            "backup, rollback, and audit trail]."
         )
 
     if action in {"optimize", "optimise"}:
@@ -356,6 +479,7 @@ def analyze_prompt(
     *,
     threshold: int = 45,
     max_questions: int = 3,
+    cwd: str | Path | None = None,
 ) -> Analysis:
     """Score a prompt and return targeted clarification questions.
 
@@ -369,6 +493,27 @@ def analyze_prompt(
 
     if not text:
         return Analysis(text, False, 0, 0, 0, (), ())
+
+    secret_findings = sensitive_findings(text)
+    redacted_text = redact_sensitive(text) if secret_findings else None
+    if secret_findings:
+        return Analysis(
+            text,
+            True,
+            100,
+            100,
+            100,
+            ("possible secret or credential in prompt",),
+            (
+                "Can you remove the secret and replace it with a placeholder such as [REDACTED_SECRET]?",
+                "Was this a real credential that should be rotated before continuing?",
+            )[: max(1, max_questions)],
+            intent="privacy",
+            suggested_prompt=suggest_rewrite("[REDACTED_SECRET]", "privacy"),
+            checks=("privacy",),
+            severity="high",
+            redacted_prompt=redacted_text,
+        )
 
     if any(marker in lowered for marker in BYPASS_MARKERS):
         return Analysis(
@@ -404,6 +549,7 @@ def analyze_prompt(
     impact = 0
     reasons: list[str] = []
     questions: list[str] = []
+    checks: list[str] = []
 
     vague_terms = _unique(match.group(0).lower() for match in VAGUE_RE.finditer(text))
     has_anchor = bool(ANCHOR_RE.search(text))
@@ -412,6 +558,21 @@ def analyze_prompt(
     has_format = bool(FORMAT_RE.search(text))
     has_broad_scope = bool(BROAD_RE.search(text))
     has_high_impact = bool(HIGH_IMPACT_RE.search(text))
+    has_production = bool(PRODUCTION_RE.search(text))
+    has_destructive_action = bool(DESTRUCTIVE_RE.search(text))
+    has_rollback = bool(ROLLBACK_RE.search(text))
+    has_plan_first = bool(PLAN_FIRST_RE.search(text))
+    references_attachment = bool(ATTACHMENT_CUE_RE.search(text))
+    missing_files = _missing_referenced_files(text, cwd)
+    requires_plan_first = bool(
+        is_action
+        and (
+            intent in {"deployment", "migration"}
+            or has_production
+            or has_destructive_action
+            or (has_broad_scope and re.search(r"\b(rewrite|refactor|remove|replace|upgrade)\b", text, re.IGNORECASE))
+        )
+    )
     is_new_build = intent == "software_build"
 
     if len(words) <= 4:
@@ -422,12 +583,14 @@ def analyze_prompt(
         reasons.append("short request")
 
     if vague_terms:
+        checks.append("clarity")
         ambiguity += min(28, 12 + 4 * len(vague_terms))
         reasons.append("subjective or vague language: " + ", ".join(vague_terms[:4]))
         if not is_image_request and not is_content_request:
             questions.append("What observable result would count as the desired improvement?")
 
     if is_action and not has_anchor and not is_image_request and not is_content_request:
+        checks.append("context")
         ambiguity += 18
         reasons.append("no concrete file, component, URL, issue, or identifier")
         questions.append("What should this apply to—specific files/components, or the whole project?")
@@ -445,11 +608,36 @@ def analyze_prompt(
         and not is_content_request
         and (vague_terms or len(words) <= 10 or has_broad_scope)
     ):
+        checks.append("output_contract")
         ambiguity += 12
         reasons.append("output format is underspecified")
         questions.append(
             "What should the final output look like—patch, plan, table, JSON, docs, screenshots, or another format?"
         )
+
+    if references_attachment and not has_anchor and len(words) <= 6:
+        checks.append("context")
+        ambiguity += 16
+        reasons.append("referenced attachment or source material is missing")
+        questions.append("Can you attach the referenced file, paste the relevant excerpt, or point to the exact path/URL?")
+
+    if missing_files:
+        checks.append("context")
+        ambiguity += 18
+        reasons.append("referenced file not found: " + ", ".join(missing_files[:3]))
+        questions.append("Can you add the referenced file to the workspace or provide the correct path?")
+
+    if requires_plan_first:
+        checks.append("risk")
+        checks.append("plan_first")
+        impact += 25
+        if not has_rollback or not has_plan_first:
+            ambiguity += 16
+            reasons.append("high-risk change needs rollback or plan-first confirmation")
+            questions.insert(
+                0,
+                "What is the rollback plan, approval boundary, and should the agent produce a plan before making changes?"
+            )
 
     if is_image_request:
         subject = _image_subject(text)
@@ -464,18 +652,21 @@ def analyze_prompt(
         has_image_format = bool(IMAGE_FORMAT_RE.search(text))
 
         if not has_subject_detail:
+            checks.append("context")
             ambiguity += 8
             reasons.append("subject lacks defining visual details")
             questions.append(
                 f"What should the {subject_label} look like—type, color, materials, condition, and distinctive details?"
             )
         if not has_image_style:
+            checks.append("output_contract")
             ambiguity += 8
             reasons.append("no visual style or mood")
             questions.append(
                 "What visual style and mood do you want—photorealistic, illustrated, cinematic, 3D, or something else?"
             )
         if not has_image_scene or not has_image_format:
+            checks.append("output_contract")
             ambiguity += 12
             reasons.append("scene, composition, or output format is underspecified")
             questions.append(
@@ -489,14 +680,17 @@ def analyze_prompt(
         has_tone_or_length = bool(TONE_RE.search(text) or LENGTH_RE.search(text) or has_format)
 
         if not has_audience:
+            checks.append("context")
             ambiguity += 10
             reasons.append("no writing audience")
             questions.append("Who is the audience, and what should they do or understand after reading it?")
         if not has_goal or not has_source:
+            checks.append("context")
             ambiguity += 12
             reasons.append("writing purpose or source material is underspecified")
             questions.append("What key points, source material, and boundaries should be included or excluded?")
         if not has_tone_or_length:
+            checks.append("output_contract")
             ambiguity += 10
             reasons.append("writing tone, length, or format is underspecified")
             questions.append("What tone, length, output format, and example style should the writing use?")
@@ -507,14 +701,17 @@ def analyze_prompt(
         has_criteria = bool(CRITERIA_RE.search(text) or has_format)
 
         if not has_goal:
+            checks.append("context")
             ambiguity += 10
             reasons.append("no specific research question")
             questions.append("What decision or question should the research answer?")
         if not has_sources:
+            checks.append("context")
             ambiguity += 10
             reasons.append("research sources or scope are underspecified")
             questions.append("What sources, date range, geography, and exclusions should be used?")
         if not has_criteria:
+            checks.append("output_contract")
             ambiguity += 10
             reasons.append("research criteria or output format is underspecified")
             questions.append("What comparison criteria, output format, citation needs, and uncertainty rules do you want?")
@@ -525,14 +722,17 @@ def analyze_prompt(
         has_output = bool(has_format or re.search(r"\b(chart|graph|dashboard|summary|report|table)\b", text, re.IGNORECASE))
 
         if not has_dataset:
+            checks.append("context")
             ambiguity += 12
             reasons.append("no dataset or data source")
             questions.append("What dataset, file, table, or columns should be analyzed?")
         if not has_metric:
+            checks.append("context")
             ambiguity += 10
             reasons.append("analysis question or metric is underspecified")
             questions.append("What question, metric, segment, or trend should the analysis answer?")
         if not has_output:
+            checks.append("output_contract")
             ambiguity += 8
             reasons.append("analysis output format is underspecified")
             questions.append("What output do you want—chart, table, summary, JSON, dashboard, or code—and how should it be validated?")
@@ -544,29 +744,35 @@ def analyze_prompt(
         has_deck_format = bool(PRESENTATION_FORMAT_RE.search(text) or has_format)
 
         if not has_audience:
+            checks.append("context")
             ambiguity += 12
             reasons.append("no presentation audience")
             questions.append("Who is the audience, and what decision or takeaway should the presentation drive?")
         if not has_goal or not has_story:
+            checks.append("context")
             ambiguity += 14
             reasons.append("presentation goal or storyline is underspecified")
             questions.append("What key message, sections, and takeaways should the deck include?")
         if not has_deck_format:
+            checks.append("output_contract")
             ambiguity += 8
             reasons.append("presentation format is underspecified")
             questions.append("How many slides, what visual style, speaker notes, timing, and example deck/style should it follow?")
 
     if has_broad_scope and not is_image_request and not is_content_request:
+        checks.append("risk")
         ambiguity += 14
         impact += 20
         reasons.append("broad scope")
 
     if is_action and not is_image_request and not is_content_request and (has_broad_scope or has_high_impact) and not has_constraint:
+        checks.append("risk")
         ambiguity += 10
         reasons.append("no boundaries or invariants")
         questions.append("What must remain unchanged, and are there technical or product constraints?")
 
     if is_action and not is_image_request and not is_content_request and (has_broad_scope or has_high_impact or vague_terms) and not has_success:
+        checks.append("output_contract")
         ambiguity += 8
         reasons.append("no verification or success criteria")
         questions.append("How should completion be verified—tests, examples, or acceptance criteria?")
@@ -595,6 +801,7 @@ def analyze_prompt(
     if re.search(r"\b(build|create|deploy|migrate|redesign|rewrite)\b", text, re.IGNORECASE):
         impact += 20
     if has_high_impact:
+        checks.append("risk")
         impact += 25
         reasons.append("high-impact area")
     if len(action_matches) >= 2:
@@ -618,6 +825,20 @@ def analyze_prompt(
     if should_clarify and has_broad_scope and not has_anchor:
         questions.insert(0, "Which part should we start with instead of changing the entire project at once?")
 
+    suggested_prompt = suggest_rewrite(text, intent) if should_clarify else None
+    if should_clarify and requires_plan_first and suggested_prompt and "Plan-first:" not in suggested_prompt:
+        suggested_prompt += (
+            " Plan-first: inspect the relevant context, propose a safe plan, and wait for "
+            "confirmation before making irreversible changes."
+        )
+
+    severity = "low"
+    if should_clarify:
+        if "risk" in checks or impact >= 80:
+            severity = "high"
+        elif score >= 55:
+            severity = "medium"
+
     return Analysis(
         prompt=text,
         should_clarify=should_clarify,
@@ -627,5 +848,8 @@ def analyze_prompt(
         reasons=_unique(reasons),
         questions=_unique(questions)[: max(1, max_questions)],
         intent=intent,
-        suggested_prompt=suggest_rewrite(text, intent) if should_clarify else None,
+        suggested_prompt=suggested_prompt,
+        checks=_unique(checks),
+        severity=severity,
+        redacted_prompt=redacted_text,
     )

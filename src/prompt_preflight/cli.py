@@ -73,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
         prompt,
         threshold=max(0, min(100, args.threshold)),
         max_questions=max(1, min(5, args.max_questions)),
+        cwd=args.cwd or Path.cwd(),
     )
     if args.record_telemetry or args.telemetry_path is not None:
         record_analysis_safely(

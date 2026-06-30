@@ -396,7 +396,7 @@ Run the prompt through structured output:
 python3 scripts/prompt_preflight.py --json "your prompt here"
 ```
 
-Check the returned `intent`, `reasons`, and `questions`. Include that output when reporting a false positive or incorrect domain classification.
+Check the returned `intent`, `severity`, `checks`, `reasons`, and `questions`. Include that output when reporting a false positive or incorrect domain classification.
 
 ### Too many prompts are interrupted
 
@@ -404,6 +404,6 @@ Increase `threshold` gradually, for example from `45` to `55`. Prefer tuning the
 
 ## Security and privacy
 
-Prompt Preflight analyzes prompt text locally with deterministic Python rules. It does not make network calls or invoke another model. Review `.codex-plugin/plugin.json`, `hooks/hooks.json`, and `scripts/prompt_preflight_hook.py` before trusting the hook, as you should for any local plugin.
+Prompt Preflight analyzes prompt text locally with deterministic Python rules. It does not make network calls or invoke another model. It can detect common secrets before they reach the host model and redacts likely credentials in feedback. It can also check that referenced source files exist, but it does not read file contents. Review `.codex-plugin/plugin.json`, `hooks/hooks.json`, and `scripts/prompt_preflight_hook.py` before trusting the hook, as you should for any local plugin.
 
 For Codex's plugin and hook behavior, see the official [plugin documentation](https://developers.openai.com/codex/plugins/) and [hooks documentation](https://developers.openai.com/codex/hooks/).

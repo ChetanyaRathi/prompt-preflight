@@ -185,6 +185,63 @@ class AnalyzerTests(unittest.TestCase):
         self.assertIn("output format is underspecified", result.reasons)
         self.assertIn("final output", " ".join(result.questions).lower())
 
+    def test_privacy_check_blocks_and_redacts_secrets(self) -> None:
+        secret = "sk-1234567890abcdef1234567890"
+        prompt = f"Use api_key={secret} to debug my request"
+        result = analyze_prompt(prompt)
+        self.assertTrue(result.should_clarify, result)
+        self.assertEqual(result.intent, "privacy")
+        self.assertEqual(result.checks, ("privacy",))
+        self.assertEqual(result.severity, "high")
+        self.assertNotIn(secret, result.to_dict()["prompt"])
+        self.assertIn("[REDACTED_SECRET]", result.to_dict()["prompt"])
+
+        message = clarification_message(result)
+        self.assertNotIn(secret, message)
+        self.assertIn("[REDACTED_SECRET]", message)
+
+    def test_privacy_check_is_not_bypassed_by_skip_marker(self) -> None:
+        result = analyze_prompt("Use token=supersecret123456 [preflight:skip]")
+        self.assertTrue(result.should_clarify, result)
+        self.assertEqual(result.checks, ("privacy",))
+        self.assertFalse(result.bypassed)
+
+    def test_high_risk_prompt_requires_plan_first_and_rollback(self) -> None:
+        result = analyze_prompt("Deploy this to production")
+        self.assertTrue(result.should_clarify, result)
+        self.assertIn("risk", result.checks)
+        self.assertIn("plan_first", result.checks)
+        self.assertEqual(result.severity, "high")
+        feedback = " ".join(result.questions).lower()
+        self.assertIn("rollback", feedback)
+        self.assertIn("plan", feedback)
+        self.assertIn("Plan-first:", result.suggested_prompt)
+
+    def test_attachment_reference_requires_context(self) -> None:
+        result = analyze_prompt("Summarize the attached PDF")
+        self.assertTrue(result.should_clarify, result)
+        self.assertIn("context", result.checks)
+        self.assertIn("referenced attachment or source material is missing", result.reasons)
+
+    def test_missing_file_reference_blocks_only_when_file_is_source_material(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            result = analyze_prompt(
+                "Analyze missing.csv by month and output a table",
+                cwd=directory,
+            )
+        self.assertTrue(result.should_clarify, result)
+        self.assertIn("context", result.checks)
+        self.assertTrue(any("referenced file not found" in reason for reason in result.reasons))
+
+    def test_existing_source_file_can_pass_when_prompt_is_specific(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "sales.csv").write_text("month,region,revenue\nJan,West,10\n", encoding="utf-8")
+            result = analyze_prompt(
+                "Analyze sales.csv by month and region, calculate revenue and conversion rate, and output a table plus a short summary of trends.",
+                cwd=directory,
+            )
+        self.assertFalse(result.should_clarify, result)
+
     def test_image_hook_feedback_is_domain_specific(self) -> None:
         result = process_payload({"prompt": "Create a car image"})
         reason = result["reason"].lower()
