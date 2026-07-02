@@ -221,7 +221,7 @@ Structured output includes the detected `intent`, ambiguity score, impact score,
 
 ## Benchmark vague-prompt detection
 
-Prompt Preflight includes a fixed benchmark of 150 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
+Prompt Preflight includes a fixed benchmark of 168 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
 
 The benchmark reads from the shared vague-prompt library:
 
@@ -292,22 +292,22 @@ should receive content-specific feedback about audience, source material, resear
 With the current default threshold, the benchmark catches:
 
 ```text
-150 / 150 vague prompts
-11 / 11 image-generation prompts
-11 / 11 writing prompts
-10 / 10 research prompts
+168 / 168 vague prompts
+12 / 12 image-generation prompts
+12 / 12 writing prompts
+11 / 11 research prompts
 12 / 12 data-analysis prompts
-11 / 11 presentation prompts
+13 / 13 presentation prompts
 ```
 
-The earlier calibration misses:
+Every benchmark prompt is currently caught. The two prompts that were the last to be tuned:
 
 ```text
 Fix the flaky tests
 Generate more tests
 ```
 
-are now caught by the output-format check. That check asks what the final result should look like when a short actionable prompt lacks structure, while avoiding false positives when the prompt already names a concrete file or source.
+are now caught after recent analyzer tuning (output-format and context checks), while specific prompts that already name a concrete file or source still pass through.
 
 These calibration cases show why the benchmark is not just a vanity metric: it gives maintainers concrete prompts to discuss, tune, and convert into regression tests when the desired behavior is clear.
 

@@ -79,6 +79,10 @@ Add robust validation
 Refactor this
 Fix the checkout bug
 Build a customer portal
+Make the app responsive
+Improve the user experience
+Build out the backend
+Refactor the payment module
 
 # Optimization
 Optimize the database
@@ -88,6 +92,8 @@ Improve scalability
 Optimize costs
 Optimize this query
 Optimize the onboarding flow
+Optimize the build
+Optimize load times
 
 # Deployment and migration
 Deploy this to production
@@ -101,6 +107,8 @@ Deploy everything
 Deploy backend to prod
 Deploy the worker
 Migrate the legacy data
+Improve the deployment pipeline
+Migrate to the cloud
 
 # Tests
 Fix the flaky tests
@@ -120,6 +128,8 @@ Generate a report
 Analyze churn
 Clean the dataset
 Analyze retention trends
+Build a metrics dashboard
+Analyze user behavior
 
 # Image generation
 Create a car image
@@ -133,6 +143,8 @@ Create a poster
 Generate an icon
 Draw a landscape
 Create a product hero image
+Design a mascot
+Create a banner image
 
 # Writing
 Write a blog post
@@ -146,6 +158,8 @@ Improve the proposal
 Write a case study
 Edit this for clarity
 Write a newsletter
+Write release notes
+Improve the README
 
 # Research
 Research this topic
@@ -159,6 +173,8 @@ Find sources
 Compare databases
 Investigate this trend
 Research compliance tools
+Research best practices
+Research the alternatives
 
 # Presentations
 Create a presentation
@@ -172,3 +188,5 @@ Polish the slides
 Summarize this into slides
 Create a webinar deck
 Create training slides
+Make a sales deck
+Create onboarding slides

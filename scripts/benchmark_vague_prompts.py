@@ -127,7 +127,7 @@ def print_summary(summary: dict[str, Any], *, show_missed: int = 10) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the fixed 150-prompt vague-prompt benchmark.",
+        description="Run the fixed 168-prompt vague-prompt benchmark.",
     )
     parser.add_argument("--threshold", type=int, default=45, help="Clarification threshold")
     parser.add_argument("--max-questions", type=int, default=3, help="Maximum questions per prompt")
