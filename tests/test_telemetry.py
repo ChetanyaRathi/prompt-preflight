@@ -88,6 +88,38 @@ class TelemetryTests(unittest.TestCase):
         self.assertIn("Estimated avoided retry turns: 1", report)
         self.assertIn("does not store prompt text", report)
 
+    def test_record_and_render_structured_prompt_block(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "telemetry.jsonl"
+            prompt = """# Task
+Create a car image
+
+# Visual Details
+A red vintage Mustang on a rainy neon street
+
+# Output Format
+16:9 PNG
+"""
+            analysis = analyze_prompt(prompt)
+            record_analysis(
+                analysis,
+                host="codex",
+                mode="block",
+                telemetry_path=path,
+                enabled=True,
+            )
+
+            events = read_events(path)
+            summary = summarize_events(events)
+            report = render_report(summary, path=path)
+
+        self.assertEqual(len(events), 1)
+        self.assertIn("template_contract", events[0]["checks"])
+        self.assertEqual(summary["prompts_blocked"], 1)
+        self.assertEqual(summary["blocked_by_check"]["template_contract"], 1)
+        self.assertIn("Blocked before model work: 1", report)
+        self.assertIn("  - template_contract: 1", report)
+
     def test_config_telemetry_is_disabled_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config = load_config(directory)

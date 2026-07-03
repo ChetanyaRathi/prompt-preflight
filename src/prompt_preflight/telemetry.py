@@ -38,6 +38,7 @@ def telemetry_event(
         "impact": analysis.impact,
         "reason_count": len(analysis.reasons),
         "question_count": len(analysis.questions),
+        "checks": analysis.checks,
         "bypassed": analysis.bypassed,
     }
 
@@ -129,6 +130,12 @@ def summarize_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
     bypassed = decisions.get("bypassed", 0)
     followups = decisions.get("followup_accepted", 0)
 
+    blocked_by_check = Counter()
+    for event in event_list:
+        if event.get("decision") == "blocked":
+            for check in event.get("checks", []):
+                blocked_by_check[str(check)] += 1
+
     return {
         "prompts_checked": prompts_checked,
         "prompts_blocked": blocked,
@@ -139,6 +146,7 @@ def summarize_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "clarification_opportunities": blocked + nudged,
         "estimated_avoided_retry_turns": blocked,
         "average_score": round(sum(scores) / len(scores), 2) if scores else 0,
+        "blocked_by_check": dict(sorted(blocked_by_check.items())),
         "decisions": dict(sorted(decisions.items())),
         "hosts": dict(sorted(hosts.items())),
         "intents": dict(sorted(intents.items())),
@@ -146,13 +154,19 @@ def summarize_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
 
 
 def render_report(summary: dict[str, Any], *, path: Path) -> str:
-    return "\n".join(
+    lines = [
+        "Prompt Preflight telemetry report",
+        f"Path: {path}",
+        "",
+        f"Prompts checked: {summary['prompts_checked']}",
+        f"Blocked before model work: {summary['prompts_blocked']}",
+    ]
+    
+    for check, count in summary.get("blocked_by_check", {}).items():
+        lines.append(f"  - {check}: {count}")
+        
+    lines.extend(
         [
-            "Prompt Preflight telemetry report",
-            f"Path: {path}",
-            "",
-            f"Prompts checked: {summary['prompts_checked']}",
-            f"Blocked before model work: {summary['prompts_blocked']}",
             f"Nudged: {summary['prompts_nudged']}",
             f"Allowed: {summary['prompts_allowed']}",
             f"Bypassed: {summary['prompts_bypassed']}",
@@ -162,7 +176,8 @@ def render_report(summary: dict[str, Any], *, path: Path) -> str:
             f"Estimated avoided retry turns: {summary['estimated_avoided_retry_turns']}",
             f"Average clarification score: {summary['average_score']}/100",
             "",
-            "Privacy: this file stores counts, decisions, hosts, intents, and scores only.",
+            "Privacy: this file stores counts, decisions, hosts, intents, check categories, and scores only.",
             "It does not store prompt text, suggested rewrites, questions, or reason strings.",
         ]
     )
+    return "\n".join(lines)
