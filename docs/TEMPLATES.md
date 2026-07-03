@@ -18,6 +18,7 @@ python3 scripts/prompt_preflight.py --template software --template-format xml
 python3 scripts/prompt_preflight.py --template research --template-format toml
 ```
 
+<!-- BEGIN GENERATED TEMPLATE DOCS - do not edit by hand -->
 Supported profiles:
 
 - `general`
@@ -45,18 +46,19 @@ Supported formats:
 | Profile | Required fields | Useful optional fields |
 | --- | --- | --- |
 | `general` | task, context, output format, success criteria | constraints, examples, non-goals, privacy notes |
-| `software` | task, scope/context, constraints, output format, success criteria | platform/stack, non-goals, examples, plan-first |
+| `software` | task, scope/context, constraints, output format, success criteria | platform/stack, non-goals, examples, plan-first, privacy notes |
 | `image` | task, visual details, style/mood, output format | avoid, examples, success criteria |
-| `writing` | task, audience, purpose, context/source material, output format | tone, length, examples, exclusions |
+| `writing` | task, audience, purpose, context/source material, output format | tone, length, examples, exclusions, success criteria |
 | `research` | research question, scope, sources, criteria, output format | date range, geography, citation style, uncertainty rule |
-| `data_analysis` | task, data source, question, metrics, output format, validation | segments, filters, assumptions |
-| `presentation` | task, audience, goal, storyline, output format | source material, visual style, speaker notes |
+| `data_analysis` | task, data source, question, metrics, output format, validation | segments, assumptions, filters, examples |
+| `presentation` | task, audience, goal, storyline, output format | source material, visual style, speaker notes, success criteria |
 | `customer_support` | task, customer issue, prior interactions, desired tone, policy or constraints, resolution, channel, output format | examples |
 | `prd` | task, problem statement, target users, functional requirements, non-functional requirements, scope, success metrics, output format | constraints, examples |
 | `incident_response` | task, incident summary, severity, timeline, impact, root cause, remediation, output format | constraints |
 | `sql` | query goal, schema, dialect, filters, performance constraints, expected output, success criteria | examples |
 | `design_critique` | task, artifact, design goals, target users, evaluation criteria, severity, deliverable format | constraints |
 | `meeting_notes` | task, meeting purpose, attendees, source transcript, decisions, action items, output format | constraints |
+<!-- END GENERATED TEMPLATE DOCS -->
 
 If a user submits a structured prompt but leaves a required field empty or placeholder-only, Prompt Preflight pauses the request and asks only for the missing required fields.
 
