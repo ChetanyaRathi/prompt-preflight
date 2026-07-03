@@ -12,7 +12,7 @@ The check uses deterministic Python rules. It makes no network requests and call
 
 ## Prompt examples and templates
 
-When Prompt Preflight catches a vague prompt, it links to [vague prompt examples and templates](docs/EXAMPLES.md). The examples page includes common vague prompts for bug fixes, new features, refactors, UI work, performance, deployment, tests, documentation, security, analytics, image generation, writing, research, data analysis, and presentations.
+When Prompt Preflight catches a vague prompt, it links to vague prompt examples and templates. The [examples page](docs/EXAMPLES.md) includes common vague prompts for bug fixes, new features, refactors, UI work, performance, deployment, tests, documentation, security, analytics, image generation, writing, research, data analysis, and presentations.
 
 Prompt Preflight also includes [structured prompt templates](docs/TEMPLATES.md) in Markdown, XML, and TOML. These prompt contracts define mandatory fields such as task, context, output format, constraints, and success criteria, plus domain-specific fields for image generation, writing, research, data analysis, and presentations.
 
@@ -161,7 +161,7 @@ The model receives a target, outcome, boundaries, and definition of done before 
 - Validates structured prompts and pauses when required fields are empty or placeholder-only.
 - Detects likely secrets and redacts them in user-facing feedback.
 - Adds risk and plan-first checks for production deploys, migrations, destructive actions, and broad repo changes.
-- Checks for missing attachments or referenced source files without reading file contents.
+- Checks for missing attachments or referenced source files, using host attachment metadata when available to avoid re-asking for provided files (file contents are NEVER read).
 - Asks at most three high-value questions.
 - Lets clear prompts and conversational follow-ups pass through.
 - Supports a one-time `[preflight:skip]` bypass for normal clarity/risk checks; likely-secret privacy blocks are not bypassed.
@@ -254,7 +254,7 @@ Expected result: Prompt Preflight asks for the missing `style or mood` section b
 
 ## Benchmark vague-prompt detection
 
-Prompt Preflight includes a fixed benchmark of 150 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
+Prompt Preflight includes a fixed benchmark of 168 intentionally vague prompts across software work, bug fixes, deployment, migration, optimization, image generation, writing, research, data analysis, and presentations.
 
 The benchmark reads from the shared vague-prompt library:
 
@@ -325,22 +325,22 @@ should receive content-specific feedback about audience, source material, resear
 With the current default threshold, the benchmark catches:
 
 ```text
-150 / 150 vague prompts
-11 / 11 image-generation prompts
-11 / 11 writing prompts
-10 / 10 research prompts
+168 / 168 vague prompts
+12 / 12 image-generation prompts
+12 / 12 writing prompts
+11 / 11 research prompts
 12 / 12 data-analysis prompts
-11 / 11 presentation prompts
+13 / 13 presentation prompts
 ```
 
-The earlier calibration misses:
+Every benchmark prompt is currently caught. The two prompts that were the last to be tuned:
 
 ```text
 Fix the flaky tests
 Generate more tests
 ```
 
-are now caught by the output-format check. That check asks what the final result should look like when a short actionable prompt lacks structure, while avoiding false positives when the prompt already names a concrete file or source.
+are now caught after recent analyzer tuning (output-format and context checks), while specific prompts that already name a concrete file or source still pass through.
 
 These calibration cases show why the benchmark is not just a vanity metric: it gives maintainers concrete prompts to discuss, tune, and convert into regression tests when the desired behavior is clear.
 
@@ -390,6 +390,15 @@ python3 scripts/install_prompt_preflight.py --clean
 ```
 
 The host-specific installers are still available when you need advanced options.
+
+### Host compatibility matrix
+
+| Host | Install command | Hook trigger | Block mode | Nudge mode | Setup guide |
+| --- | --- | --- | --- | --- | --- |
+| Codex | `python3 scripts/install_prompt_preflight.py --target codex` | `UserPromptSubmit` | Yes — blocks vague prompts before model work | Yes — set `mode: "nudge"` in `.prompt-preflight.json` | [Codex setup](docs/SETUP.md) |
+| Claude Code | `python3 scripts/install_prompt_preflight.py --target claude` | `UserPromptSubmit` | Yes — returns a blocking hook decision | Yes — set `mode: "nudge"` in `.prompt-preflight.json` | [Claude Code setup](docs/CLAUDE.md) |
+| Kiro IDE | `python3 scripts/install_prompt_preflight.py --target kiro --kiro-workspace /path/to/project` | `userPromptSubmit` | Yes — exits `2` with clarification feedback | Yes — set `mode: "nudge"` in `.prompt-preflight.json` | [Kiro setup](docs/KIRO.md) |
+| Kiro CLI | Run `python3 scripts/prompt_preflight.py "<prompt>"` before invoking Kiro CLI, or wire the same command into a custom-agent hook | `userPromptSubmit` custom-agent hook | No documented blocking path; CLI hooks add stdout to context | Yes — use direct preflight output or nudge-mode context | [Kiro CLI note](docs/KIRO.md#kiro-cli-note) |
 
 ## Install in Codex
 
