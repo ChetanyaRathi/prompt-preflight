@@ -642,6 +642,8 @@ Prompt text is analyzed locally. Prompt Preflight does not:
 
 Prompt Preflight can detect common credential shapes such as API keys, tokens, password assignments, private key blocks, and cloud access keys. When that happens, it blocks before the model sees the prompt, redacts the credential in feedback, and asks the user to replace it with a placeholder. It can also check whether referenced source files exist, but it only checks file names/paths and does not read file contents.
 
+**Important:** If Prompt Preflight catches a REAL credential, that credential was still entered into your local terminal or chat history. You must **rotate** the compromised credential immediately; do not just remove it from the prompt.
+
 As with any local plugin, review `.codex-plugin/plugin.json`, `hooks/hooks.json`, and `scripts/prompt_preflight_hook.py` before trusting the hook.
 
 For Claude Code, review `.claude-plugin/plugin.json`, `hooks/claude-hooks.json`, and `scripts/prompt_preflight_claude_hook.py`.

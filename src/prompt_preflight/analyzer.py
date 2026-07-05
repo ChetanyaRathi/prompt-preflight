@@ -169,22 +169,40 @@ OUTPUT_FILE_PREFIX_RE = re.compile(r"\b(?:create|generate|output|save|write)\s+`
 SENSITIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "private key",
-        re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.DOTALL),
+        re.compile(r"(?P<secret>-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----)", re.DOTALL),
     ),
-    ("OpenAI-style API key", re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b")),
-    ("Anthropic-style API key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b")),
-    ("GitHub token", re.compile(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b")),
-    ("GitHub fine-grained token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
-    ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
-    ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_-]{30,}\b")),
-    ("Slack token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b")),
+    ("OpenAI-style API key", re.compile(r"\b(?P<secret>sk-[A-Za-z0-9_-]{20,})\b")),
+    ("Anthropic-style API key", re.compile(r"\b(?P<secret>sk-ant-[A-Za-z0-9_-]{20,})\b")),
+    ("GitHub token", re.compile(r"\b(?P<secret>(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,})\b")),
+    ("GitHub fine-grained token", re.compile(r"\b(?P<secret>github_pat_[A-Za-z0-9_]{20,})\b")),
+    ("AWS access key", re.compile(r"\b(?P<secret>AKIA[0-9A-Z]{16})\b")),
+    ("Google API key", re.compile(r"\b(?P<secret>AIza[0-9A-Za-z_-]{30,})\b")),
+    ("Slack token", re.compile(r"\b(?P<secret>xox[baprs]-[A-Za-z0-9-]{20,})\b")),
     (
         "credential assignment",
         re.compile(
             r"\b(?:api[_-]?key|auth[_-]?token|password|secret|token)\s*[:=]\s*"
-            r"[\"']?[A-Za-z0-9_./+=:@%-]{8,}[\"']?",
+            r"[\"']?(?P<secret>[A-Za-z0-9_./+=:@%-]{8,})[\"']?",
             re.IGNORECASE,
         ),
+    ),
+    ("Stripe key", re.compile(r"\b(?P<secret>(?:sk|rk)_(?:live|test)_[A-Za-z0-9]+|whsec_[A-Za-z0-9]+)\b")),
+    ("Twilio token", re.compile(r"\b(?P<secret>(?:AC|SK)[0-9a-fA-F]{32})\b")),
+    ("Azure token", re.compile(r"\b(?:AccountKey|sig)=(?P<secret>[A-Za-z0-9%+/=]+)\b")),
+    ("npm token", re.compile(r"\b(?P<secret>npm_[A-Za-z0-9]{36})\b")),
+    ("Docker Hub PAT", re.compile(r"\b(?P<secret>dckr_pat_[A-Za-z0-9_-]{20,})\b")),
+    (
+        "Vercel / Netlify token",
+        re.compile(r"\b(?:VERCEL_TOKEN|NETLIFY_AUTH_TOKEN)\s*=\s*[\"']?(?P<secret>[A-Za-z0-9_-]+)[\"']?")
+    ),
+    (
+        "database URL",
+        re.compile(r"\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqps?)://[^:\s]+:(?P<secret>[^@\s]+)@[^\s/]+\b", re.IGNORECASE)
+    ),
+    ("JWT", re.compile(r"\b(?P<secret>eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\b")),
+    (
+        ".env block assignment",
+        re.compile(r"\b[A-Z0-9_]*(?:SECRET|TOKEN|KEY|PASSWORD|PASS|CREDENTIAL|API)[A-Z0-9_]*\s*=\s*[\"']?(?P<secret>[^\s\"']+)[\"']?")
     ),
 )
 
@@ -225,13 +243,40 @@ def _unique(items: Iterable[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(items))
 
 
+def _get_secret_value(match: re.Match[str]) -> str:
+    return match.group("secret") if "secret" in match.groupdict() else match.group(0)
+
+
+def is_placeholder(value: str) -> bool:
+    val = value.lower()
+    if val == "akiaiosfodnn7example":
+        return True
+    if any(x in val for x in ("example", "changeme", "redacted", "dummy", "placeholder", "insert")):
+        return True
+    if val.startswith("xxx") or val.startswith("your-"):
+        return True
+    if (val.startswith("<") and val.endswith(">")) or \
+       (val.startswith("${") and val.endswith("}")) or \
+       (val.startswith("{{") and val.endswith("}}")):
+        return True
+    if "process.env" in val or "os.environ" in val or "env." in val:
+        return True
+    if val in {"password", "pass", "user"}:
+        return True
+    if len(val) > 0 and len(set(val)) == 1:
+        return True
+    return False
+
+
 def sensitive_findings(prompt: str) -> tuple[str, ...]:
     """Return names of likely secrets present in prompt text."""
 
     findings: list[str] = []
     for label, pattern in SENSITIVE_PATTERNS:
-        if pattern.search(prompt):
-            findings.append(label)
+        for match in pattern.finditer(prompt):
+            if not is_placeholder(_get_secret_value(match)):
+                findings.append(label)
+                break
     return _unique(findings)
 
 
@@ -240,7 +285,13 @@ def redact_sensitive(prompt: str) -> str:
 
     redacted = prompt
     for _, pattern in SENSITIVE_PATTERNS:
-        redacted = pattern.sub("[REDACTED_SECRET]", redacted)
+        def repl(m: re.Match[str]) -> str:
+            if is_placeholder(_get_secret_value(m)):
+                return m.group(0)
+            if "secret" in m.groupdict():
+                return m.group(0).replace(m.group("secret"), "[REDACTED_SECRET]")
+            return "[REDACTED_SECRET]"
+        redacted = pattern.sub(repl, redacted)
     return redacted
 
 
