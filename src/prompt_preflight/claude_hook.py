@@ -54,6 +54,9 @@ def process_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
         mode=config.mode,
         telemetry_path=config.telemetry_path,
         enabled=config.telemetry_enabled,
+        max_events=config.telemetry_max_events,
+        max_bytes=config.telemetry_max_bytes,
+        retention_days=config.telemetry_retention_days,
     )
     if not analysis.should_clarify:
         return None

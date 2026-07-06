@@ -18,6 +18,9 @@ class Config:
     max_questions: int = 3
     telemetry_enabled: bool = False
     telemetry_path: Path | None = None
+    telemetry_max_events: int | None = None
+    telemetry_max_bytes: int | None = None
+    telemetry_retention_days: int | None = None
     checks: dict[str, str] | None = None
     severity_thresholds: dict[str, str] | None = None
 
@@ -48,17 +51,33 @@ def _telemetry_path_from_raw(raw: dict[str, Any], directory: Path) -> Path:
     return path
 
 
-def _telemetry_settings(raw: dict[str, Any], directory: Path) -> tuple[bool, Path | None]:
+def _telemetry_settings(raw: dict[str, Any], directory: Path) -> tuple[bool, Path | None, int | None, int | None, int | None]:
     telemetry = raw.get("telemetry", False)
+    max_events = None
+    max_bytes = None
+    retention_days = None
+
     if isinstance(telemetry, dict):
         enabled = bool(telemetry.get("enabled", False))
+        
+        raw_events = telemetry.get("max_events")
+        if isinstance(raw_events, int) and raw_events > 0:
+            max_events = raw_events
+            
+        raw_bytes = telemetry.get("max_bytes")
+        if isinstance(raw_bytes, int) and raw_bytes > 0:
+            max_bytes = raw_bytes
+            
+        raw_days = telemetry.get("retention_days")
+        if isinstance(raw_days, int) and raw_days > 0:
+            retention_days = raw_days
     else:
         enabled = bool(telemetry)
 
     if not enabled:
-        return False, None
+        return False, None, max_events, max_bytes, retention_days
 
-    return True, _telemetry_path_from_raw(raw, directory)
+    return True, _telemetry_path_from_raw(raw, directory), max_events, max_bytes, retention_days
 
 
 def resolve_telemetry_report_path(cwd: str | Path | None = None) -> Path:
@@ -85,7 +104,7 @@ def load_config(cwd: str | Path | None = None) -> Config:
         if path.is_file():
             try:
                 raw: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-                telemetry_enabled, telemetry_path = _telemetry_settings(raw, directory)
+                telemetry_enabled, telemetry_path, telemetry_max_events, telemetry_max_bytes, telemetry_retention_days = _telemetry_settings(raw, directory)
                 
                 raw_mode = raw.get("mode")
                 mode = raw_mode if raw_mode in {"block", "nudge"} else "block"
@@ -124,6 +143,9 @@ def load_config(cwd: str | Path | None = None) -> Config:
                     max_questions=max(1, min(5, int(raw.get("max_questions", 3)))),
                     telemetry_enabled=telemetry_enabled,
                     telemetry_path=telemetry_path,
+                    telemetry_max_events=telemetry_max_events,
+                    telemetry_max_bytes=telemetry_max_bytes,
+                    telemetry_retention_days=telemetry_retention_days,
                     checks=checks,
                     severity_thresholds=severity_thresholds,
                 )

@@ -18,6 +18,9 @@
   },
   "telemetry": {
     "enabled": false,
-    "path": ".prompt-preflight-telemetry.jsonl"
+    "path": ".prompt-preflight-telemetry.jsonl",
+    "max_events": 1000,
+    "max_bytes": 1048576,
+    "retention_days": 30
   }
 }

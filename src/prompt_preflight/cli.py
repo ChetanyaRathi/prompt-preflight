@@ -110,6 +110,9 @@ def main(argv: list[str] | None = None) -> int:
             mode="block",
             telemetry_path=args.telemetry_path or Path(DEFAULT_TELEMETRY_FILE),
             enabled=True,
+            max_events=config.telemetry_max_events,
+            max_bytes=config.telemetry_max_bytes,
+            retention_days=config.telemetry_retention_days,
         )
     if args.as_json:
         print(json.dumps(analysis.to_dict(), indent=2))
