@@ -37,6 +37,19 @@ class TelemetryTests(unittest.TestCase):
         self.assertEqual(event["intent"], "image_generation")
         self.assertEqual(event["question_count"], 3)
 
+    def test_telemetry_event_timestamp_modes(self) -> None:
+        analysis = analyze_prompt("Create a car image")
+
+        event_exact = telemetry_event(analysis, host="test", decision="blocked", timestamp_mode="exact")
+        self.assertIn("T", event_exact["timestamp"])
+
+        event_date = telemetry_event(analysis, host="test", decision="blocked", timestamp_mode="date")
+        self.assertNotIn("T", event_date["timestamp"])
+        self.assertEqual(len(event_date["timestamp"]), 10)
+
+        event_none = telemetry_event(analysis, host="test", decision="blocked", timestamp_mode="none")
+        self.assertNotIn("timestamp", event_none)
+
     def test_record_and_summarize_counts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "telemetry.jsonl"
@@ -136,6 +149,29 @@ A red vintage Mustang on a rainy neon street
             config = load_config(root)
         self.assertTrue(config.telemetry_enabled)
         self.assertEqual(config.telemetry_path, root.resolve() / "local-telemetry.jsonl")
+        self.assertEqual(config.telemetry_timestamp_mode, "exact")
+
+    def test_config_invalid_timestamp_mode_falls_back_to_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "timestamp_mode": "invalid"}}),
+                encoding="utf-8",
+            )
+            config = load_config(root)
+        self.assertTrue(config.telemetry_enabled)
+        self.assertEqual(config.telemetry_timestamp_mode, "exact")
+
+    def test_config_valid_timestamp_modes(self) -> None:
+        for mode in ("exact", "date", "none"):
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                Path(root, ".prompt-preflight.json").write_text(
+                    json.dumps({"telemetry": {"enabled": True, "timestamp_mode": mode}}),
+                    encoding="utf-8",
+                )
+                config = load_config(root)
+            self.assertEqual(config.telemetry_timestamp_mode, mode)
 
     def test_resolve_telemetry_report_path_uses_configured_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -18,6 +18,7 @@
   },
   "telemetry": {
     "enabled": false,
-    "path": ".prompt-preflight-telemetry.jsonl"
+    "path": ".prompt-preflight-telemetry.jsonl",
+    "timestamp_mode": "exact"
   }
 }

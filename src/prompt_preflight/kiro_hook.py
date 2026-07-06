@@ -60,6 +60,7 @@ def process_payload(payload: dict[str, Any]) -> tuple[int, str, str]:
         mode=config.mode,
         telemetry_path=config.telemetry_path,
         enabled=config.telemetry_enabled,
+        timestamp_mode=config.telemetry_timestamp_mode,
     )
     if not analysis.should_clarify:
         return 0, "", ""

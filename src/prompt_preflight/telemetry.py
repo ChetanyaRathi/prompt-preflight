@@ -24,12 +24,12 @@ def telemetry_event(
     *,
     host: str,
     decision: str,
+    timestamp_mode: str = "exact",
 ) -> dict[str, Any]:
     """Build a prompt-free telemetry event from an analysis result."""
 
-    return {
+    event = {
         "version": TELEMETRY_VERSION,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
         "host": host,
         "decision": decision,
         "intent": analysis.intent,
@@ -41,6 +41,13 @@ def telemetry_event(
         "checks": analysis.checks,
         "bypassed": analysis.bypassed,
     }
+
+    if timestamp_mode == "exact":
+        event["timestamp"] = datetime.now(timezone.utc).isoformat()
+    elif timestamp_mode == "date":
+        event["timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    return event
 
 
 def decision_for_analysis(analysis: Analysis, *, mode: str) -> str:
@@ -67,6 +74,7 @@ def record_analysis(
     mode: str,
     telemetry_path: Path | None,
     enabled: bool,
+    timestamp_mode: str = "exact",
 ) -> None:
     if not enabled or telemetry_path is None:
         return
@@ -76,6 +84,7 @@ def record_analysis(
             analysis,
             host=host,
             decision=decision_for_analysis(analysis, mode=mode),
+            timestamp_mode=timestamp_mode,
         ),
     )
 
@@ -87,6 +96,7 @@ def record_analysis_safely(
     mode: str,
     telemetry_path: Path | None,
     enabled: bool,
+    timestamp_mode: str = "exact",
 ) -> None:
     try:
         record_analysis(
@@ -95,6 +105,7 @@ def record_analysis_safely(
             mode=mode,
             telemetry_path=telemetry_path,
             enabled=enabled,
+            timestamp_mode=timestamp_mode,
         )
     except OSError:
         # Telemetry must never make a host hook unusable.
