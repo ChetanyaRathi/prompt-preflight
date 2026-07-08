@@ -60,6 +60,9 @@ def process_payload(payload: dict[str, Any]) -> tuple[int, str, str]:
         mode=config.mode,
         telemetry_path=config.telemetry_path,
         enabled=config.telemetry_enabled,
+        token_observability_enabled=config.token_observability_enabled,
+        token_default_max_output_tokens=config.token_default_max_output_tokens,
+        token_estimated_retry_output_tokens=config.token_estimated_retry_output_tokens,
     )
     if not analysis.should_clarify:
         return 0, "", ""

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .telemetry import DEFAULT_TELEMETRY_FILE
+from .token_observability import DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_RETRY_OUTPUT_TOKENS
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,9 @@ class Config:
     max_questions: int = 3
     telemetry_enabled: bool = False
     telemetry_path: Path | None = None
+    token_observability_enabled: bool = True
+    token_default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
+    token_estimated_retry_output_tokens: int = DEFAULT_RETRY_OUTPUT_TOKENS
     checks: dict[str, str] | None = None
     severity_thresholds: dict[str, str] | None = None
 
@@ -61,6 +65,30 @@ def _telemetry_settings(raw: dict[str, Any], directory: Path) -> tuple[bool, Pat
     return True, _telemetry_path_from_raw(raw, directory)
 
 
+def _bounded_int(value: Any, default: int, *, minimum: int = 0, maximum: int = 1_000_000) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(minimum, min(maximum, parsed))
+
+
+def _token_observability_settings(raw: dict[str, Any]) -> tuple[bool, int, int]:
+    section = raw.get("token_observability", True)
+    if isinstance(section, dict):
+        enabled = bool(section.get("enabled", True))
+        max_output = _bounded_int(
+            section.get("default_max_output_tokens"),
+            DEFAULT_MAX_OUTPUT_TOKENS,
+        )
+        retry_output = _bounded_int(
+            section.get("estimated_retry_output_tokens"),
+            DEFAULT_RETRY_OUTPUT_TOKENS,
+        )
+        return enabled, max_output, retry_output
+    return bool(section), DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_RETRY_OUTPUT_TOKENS
+
+
 def resolve_telemetry_report_path(cwd: str | Path | None = None) -> Path:
     """Return the telemetry file path for reporting from project config."""
 
@@ -86,6 +114,11 @@ def load_config(cwd: str | Path | None = None) -> Config:
             try:
                 raw: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
                 telemetry_enabled, telemetry_path = _telemetry_settings(raw, directory)
+                (
+                    token_observability_enabled,
+                    token_default_max_output_tokens,
+                    token_estimated_retry_output_tokens,
+                ) = _token_observability_settings(raw)
                 
                 raw_mode = raw.get("mode")
                 mode = raw_mode if raw_mode in {"block", "nudge"} else "block"
@@ -124,6 +157,9 @@ def load_config(cwd: str | Path | None = None) -> Config:
                     max_questions=max(1, min(5, int(raw.get("max_questions", 3)))),
                     telemetry_enabled=telemetry_enabled,
                     telemetry_path=telemetry_path,
+                    token_observability_enabled=token_observability_enabled,
+                    token_default_max_output_tokens=token_default_max_output_tokens,
+                    token_estimated_retry_output_tokens=token_estimated_retry_output_tokens,
                     checks=checks,
                     severity_thresholds=severity_thresholds,
                 )
