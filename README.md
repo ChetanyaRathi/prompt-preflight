@@ -168,7 +168,7 @@ The model receives a target, outcome, boundaries, and definition of done before 
 - Supports configurable block and nudge modes.
 - Fails open if hook input is malformed.
 - Provides structured JSON for evaluation and debugging.
-- Includes a VS Code extension for checking prompt files, composing structured prompts, running workspace prompt lint, showing inline diagnostics, and viewing local telemetry graphs. It can run from source or be packaged as a local VSIX. See [Prompt Preflight for VS Code](vscode-extension/README.md).
+- Includes a VS Code extension for checking prompt files, composing structured prompts, running workspace prompt lint, showing inline diagnostics, and viewing local telemetry graphs. The VSIX bundles the Python analyzer, so normal users do not need a repo checkout or `promptPreflight.repoPath`. See [Prompt Preflight for VS Code](vscode-extension/README.md).
 
 ## How the decision works
 
@@ -748,6 +748,14 @@ release gates in [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) are
 complete or explicitly deferred. The key gates are clean VSIX install, green
 Setup Doctor, working telemetry dashboard, current docs/screenshots, privacy
 verification, package audit, and repo hygiene.
+
+Run the automated release gates from the repo root:
+
+```bash
+python3 scripts/release_check.py
+```
+
+That runs Python tests, template-doc validation, the vague-prompt benchmark, VS Code tests, VSIX packaging, VSIX package audit, bundled-analyzer smoke test, and a clean temporary VSIX install. It also prints the remaining manual gates that still need human UAT.
 
 ## Limitations
 

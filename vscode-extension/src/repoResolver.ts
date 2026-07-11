@@ -7,7 +7,13 @@ import * as path from "path";
 export const PROMPT_PREFLIGHT_CLI_RELATIVE_PATH = path.join("scripts", "prompt_preflight.py");
 
 /**
- * Inputs used to discover the main prompt-preflight repository checkout.
+ * Relative path to the packaged Python analyzer inside the installed VSIX.
+ */
+export const BUNDLED_ANALYZER_RELATIVE_PATH = "bundled-analyzer";
+
+/**
+ * Inputs used to discover either the main prompt-preflight checkout or the
+ * packaged analyzer bundled inside the VSIX.
  */
 export interface RepoPathResolutionInput {
   extensionPath: string;
@@ -20,6 +26,13 @@ export interface RepoPathResolutionInput {
  */
 export function cliPathForRepo(repoPath: string): string {
   return path.join(repoPath, PROMPT_PREFLIGHT_CLI_RELATIVE_PATH);
+}
+
+/**
+ * Joins an extension install path with the bundled Python analyzer root.
+ */
+export function bundledAnalyzerPath(extensionPath: string): string {
+  return path.join(extensionPath, BUNDLED_ANALYZER_RELATIVE_PATH);
 }
 
 /**
@@ -44,8 +57,9 @@ function addCandidate(candidates: string[], candidate?: string): void {
 
 /**
  * Builds the ordered list of places where the extension should look for the
- * main repo. This supports local development, installed VSIX usage, and users
- * who open the parent folder that contains `prompt-preflight`.
+ * main repo or bundled analyzer. This supports local development, installed
+ * VSIX usage, and users who open the parent folder that contains
+ * `prompt-preflight`.
  */
 export function repoPathCandidates(input: RepoPathResolutionInput): string[] {
   const candidates: string[] = [];
@@ -61,7 +75,15 @@ export function repoPathCandidates(input: RepoPathResolutionInput): string[] {
   //   vscode-extension/
   addCandidate(candidates, path.resolve(input.extensionPath, ".."));
 
-  // Future packaged layout fallback if the Python analyzer is bundled later.
+  // Marketplace / installed VSIX layout:
+  // prompt-preflight-vscode-<version>/
+  //   bundled-analyzer/
+  //     scripts/prompt_preflight.py
+  //     src/prompt_preflight/...
+  addCandidate(candidates, bundledAnalyzerPath(input.extensionPath));
+
+  // Extra fallback for custom packaging layouts that put scripts/ at the
+  // extension root.
   addCandidate(candidates, input.extensionPath);
 
   return candidates;

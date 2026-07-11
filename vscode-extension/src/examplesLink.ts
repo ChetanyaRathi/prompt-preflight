@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
+import { bundledAnalyzerPath } from "./repoResolver";
 
 /**
  * Command identifier used by diagnostics and command registration to open the
@@ -9,21 +10,31 @@ import * as vscode from "vscode";
 export const OPEN_EXAMPLES_COMMAND = "promptPreflight.openExamples";
 
 /**
- * Finds the Prompt Preflight repository checkout that contains the examples doc.
+ * Builds possible roots that can contain the examples doc. Installed VSIX users
+ * should resolve to the bundled analyzer; repoPath remains a development
+ * override for local source work.
  */
-function resolveRepoPath(extensionPath: string): string {
+function exampleRoots(extensionPath: string): string[] {
   const configuredRepoPath = vscode.workspace
     .getConfiguration("promptPreflight")
     .get<string>("repoPath", "")
     .trim();
-  return configuredRepoPath || path.resolve(extensionPath, "..");
+  const roots = [
+    configuredRepoPath,
+    path.resolve(extensionPath, ".."),
+    bundledAnalyzerPath(extensionPath),
+    extensionPath
+  ].filter((root): root is string => Boolean(root));
+  return Array.from(new Set(roots));
 }
 
 /**
- * Builds the absolute path to the bundled examples document.
+ * Finds the absolute path to the bundled or checkout examples document.
  */
-function examplesPath(extensionPath: string): string {
-  return path.join(resolveRepoPath(extensionPath), "docs", "EXAMPLES.md");
+function examplesPath(extensionPath: string): string | undefined {
+  return exampleRoots(extensionPath)
+    .map((root) => path.join(root, "docs", "EXAMPLES.md"))
+    .find((candidate) => fs.existsSync(candidate));
 }
 
 /**
@@ -31,9 +42,9 @@ function examplesPath(extensionPath: string): string {
  */
 export async function openPromptExamples(context: vscode.ExtensionContext): Promise<void> {
   const filePath = examplesPath(context.extensionPath);
-  if (!fs.existsSync(filePath)) {
+  if (!filePath) {
     void vscode.window.showErrorMessage(
-      `Prompt Preflight: could not find examples at ${filePath}. Set promptPreflight.repoPath to your prompt-preflight checkout.`
+      "Prompt Preflight: could not find bundled prompt examples. Reinstall the extension, or set promptPreflight.repoPath to a local prompt-preflight checkout while developing from source."
     );
     return;
   }

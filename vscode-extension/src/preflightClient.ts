@@ -46,9 +46,10 @@ function getConfig<T>(key: string): T {
 }
 
 /**
- * Finds the Prompt Preflight repository checkout that contains the Python CLI.
- * During local development the extension folder sits inside the repo, while
- * installed users can point this setting to any checkout with repoPath.
+ * Finds the analyzer root that contains the Python CLI. During local
+ * development this can be the repo checkout; in Marketplace/VSIX installs this
+ * should resolve to the bundled analyzer shipped with the extension. repoPath
+ * remains as an override for contributors testing analyzer changes from source.
  */
 export function resolveRepoPath(extensionPath: string, workspacePath?: string): string {
   const configuredRepoPath = getConfig<string>("repoPath");
@@ -90,7 +91,7 @@ export async function runPreflight(
     throw new Error(
       [
         `Could not find Prompt Preflight CLI at ${cliPath}.`,
-        "Open the main prompt-preflight repo as your workspace, or set promptPreflight.repoPath to your prompt-preflight checkout.",
+        "The VSIX should include a bundled analyzer. If you are developing from source, open the main prompt-preflight repo as your workspace or set promptPreflight.repoPath to your checkout.",
         "",
         "Checked:",
         checkedPaths || "- no candidate paths"

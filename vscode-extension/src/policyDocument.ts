@@ -1,7 +1,14 @@
+import * as path from "path";
+
 /**
  * Standard repo-level Prompt Preflight policy file name.
  */
 export const TEAM_POLICY_FILE_NAME = ".prompt-preflight.json";
+
+/**
+ * Default prompt-free telemetry file path used by the generated team policy.
+ */
+export const DEFAULT_POLICY_TELEMETRY_PATH = ".prompt-preflight-telemetry.jsonl";
 
 /**
  * Plain document spec for opening a new team policy template.
@@ -9,6 +16,20 @@ export const TEAM_POLICY_FILE_NAME = ".prompt-preflight.json";
 export interface TeamPolicyDocumentSpec {
   language: string;
   content: string;
+}
+
+/**
+ * Checks whether an unknown value is an editable JSON object.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Builds the expected absolute policy path for a workspace root.
+ */
+export function teamPolicyFilePath(workspacePath: string): string {
+  return path.join(workspacePath, TEAM_POLICY_FILE_NAME);
 }
 
 /**
@@ -36,7 +57,7 @@ export function teamPolicyTemplateText(): string {
       },
       telemetry: {
         enabled: false,
-        path: ".prompt-preflight-telemetry.jsonl"
+        path: DEFAULT_POLICY_TELEMETRY_PATH
       },
       token_observability: {
         enabled: true,
@@ -47,6 +68,25 @@ export function teamPolicyTemplateText(): string {
     null,
     2
   )}\n`;
+}
+
+/**
+ * Returns policy JSON with prompt-free local telemetry explicitly enabled.
+ */
+export function policyTextWithTelemetryEnabled(policyText: string): string {
+  const parsed: unknown = JSON.parse(policyText);
+  if (!isRecord(parsed)) {
+    throw new Error("Policy file must contain a JSON object.");
+  }
+
+  const telemetry = isRecord(parsed.telemetry) ? { ...parsed.telemetry } : {};
+  telemetry.enabled = true;
+  if (typeof telemetry.path !== "string" || !telemetry.path.trim()) {
+    telemetry.path = DEFAULT_POLICY_TELEMETRY_PATH;
+  }
+  parsed.telemetry = telemetry;
+
+  return `${JSON.stringify(parsed, null, 2)}\n`;
 }
 
 /**

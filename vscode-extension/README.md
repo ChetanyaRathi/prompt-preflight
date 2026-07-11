@@ -8,6 +8,10 @@ Author: Arunkumar Ganesan
 
 This extension is currently intended for local development, from-source testing, and local VSIX installation. Marketplace publishing can be added later.
 
+## Demo
+
+![Prompt Preflight VS Code demo](media/demo.gif)
+
 ## Why use it?
 
 AI-agent prompts often live in Markdown notes, team prompt libraries, docs, tickets, or scratch files before they are pasted into a model. This extension helps catch vague or risky prompts earlier, while the prompt is still being written.
@@ -46,18 +50,22 @@ It can flag issues such as:
 ## Requirements
 
 - VS Code `1.84.0` or newer
+- Python `3.10` or newer
+
+For normal VSIX/Marketplace usage, the Python analyzer is bundled inside the extension. Users do not need to clone this repository or set `promptPreflight.repoPath`.
+
+For source development or VSIX packaging, you also need:
+
 - Node.js and npm
 - Node.js `20` or newer for VSIX packaging with `@vscode/vsce`
-- Python `3.10` or newer
-- A local checkout of the main `prompt-preflight` repository
 
-The extension calls:
+The extension calls the bundled CLI:
 
 ```text
-scripts/prompt_preflight.py --json
+bundled-analyzer/scripts/prompt_preflight.py --json
 ```
 
-from the main repo checkout.
+During source development, it can also use the main repo checkout.
 
 ## Setup from source
 
@@ -87,14 +95,14 @@ If the Command Palette does not show Prompt Preflight commands, make sure the or
 
 ## Build and install a local VSIX
 
-The VSIX package installs the VS Code extension UI and commands. It does not yet bundle the Python analyzer.
+The VSIX package installs the VS Code extension UI, commands, examples, prompt-template catalog, and Python analyzer.
 
-The extension can find the Python analyzer automatically when either:
+The extension can find the Python analyzer automatically from:
 
-- the open VS Code workspace is the main `prompt-preflight` repo, or
-- the open workspace contains a `prompt-preflight/` child folder.
-
-If you open some other folder, set `promptPreflight.repoPath` to your local `prompt-preflight` checkout.
+- a developer override set with `promptPreflight.repoPath`
+- the open VS Code workspace if it is the main `prompt-preflight` repo
+- a `prompt-preflight/` child folder under the open workspace
+- the bundled analyzer inside the installed VSIX
 
 From this folder:
 
@@ -119,14 +127,6 @@ Install the generated package:
 code --install-extension prompt-preflight-vscode-0.0.1.vsix
 ```
 
-Then open VS Code settings JSON and point the extension at the main repo checkout:
-
-```json
-{
-  "promptPreflight.repoPath": "/path/to/prompt-preflight"
-}
-```
-
 After installation, run:
 
 ```text
@@ -139,21 +139,17 @@ or open a Markdown file and click:
 🟢 ▶ Run Prompt Preflight Check
 ```
 
-If you see `Could not find Prompt Preflight CLI`, the VSIX installed correctly but `promptPreflight.repoPath` is missing or points to the wrong folder.
+If you see `Could not find Prompt Preflight CLI`, the VSIX installed but the analyzer could not be resolved. For Marketplace/VSIX users, that usually means the bundled analyzer was not packaged correctly; reinstall the extension and run:
 
-For this local project, the setting should be:
-
-```json
-{
-  "promptPreflight.repoPath": "/Users/arunkumarganesan/Documents/Prompt Optimizer/prompt-preflight"
-}
+```text
+Prompt Preflight: Run Setup Doctor
 ```
 
-## Configure repo path
+## Optional developer repo path
 
-During development inside this repo, the extension automatically resolves the main repo path as the parent folder of `vscode-extension`.
+During development inside this repo, the extension automatically resolves the main repo path as the parent folder of `vscode-extension`. Installed VSIX users normally do not need `repoPath` because the analyzer is bundled.
 
-If you run the extension from another location, set:
+If you are developing analyzer changes from another checkout and want the extension to use that checkout instead of the bundled analyzer, set:
 
 ```json
 {
@@ -179,7 +175,13 @@ Telemetry stays on the user machine. The VS Code extension reads the same local
 JSONL file used by the CLI, Codex hook, Claude Code hook, and Kiro hook. It does
 not send telemetry to a server and does not store prompt text or response text.
 
-Enable telemetry in your workspace policy:
+Enable telemetry with:
+
+```text
+Prompt Preflight: Enable Local Telemetry
+```
+
+That command creates or updates `.prompt-preflight.json` with:
 
 ```json
 {
@@ -195,7 +197,7 @@ Enable telemetry in your workspace policy:
 }
 ```
 
-Save that as `.prompt-preflight.json` in the workspace root. After that:
+After that:
 
 1. Run normal prompt checks from VS Code, Codex, Claude Code, Kiro, or the CLI.
 2. Open the Command Palette.
@@ -264,7 +266,9 @@ Open the Command Palette with `Cmd+Shift+P` on macOS or `Ctrl+Shift+P` on Window
 | `Prompt Preflight: New TOML Prompt Template` | Opens a new TOML prompt-template document. |
 | `Prompt Preflight: Open Prompt Examples` | Opens the shared vague-prompt examples file. |
 | `Prompt Preflight: Lint Workspace Prompt Files` | Checks marked prompt files in the workspace. |
-| `Prompt Preflight: Open Team Policy` | Opens or creates `.prompt-preflight.json`. |
+| `Prompt Preflight: Create .prompt-preflight.json` | Creates the workspace policy file from the default template and opens it. |
+| `Prompt Preflight: Enable Local Telemetry` | Creates or updates the workspace policy so `telemetry.enabled` is `true`. |
+| `Prompt Preflight: Open Team Policy` | Opens an existing policy file, or opens an untitled policy template when one does not exist. |
 | `Prompt Preflight: Open Prompt Composer` | Opens the form-based prompt composer. |
 | `Prompt Preflight: Open Telemetry Dashboard` | Opens local telemetry graphs and token-estimate summaries. |
 | `Prompt Preflight: Run Setup Doctor` | Opens a setup report for repo path, Python path, duplicate extensions, and telemetry policy. |
@@ -452,7 +456,21 @@ The linter checks marked `*.md`, `*.xml`, and `*.toml` files, reports failures i
 
 ## Team policy
 
-Run:
+To create the policy file directly in your workspace root, run:
+
+```text
+Prompt Preflight: Create .prompt-preflight.json
+```
+
+If `.prompt-preflight.json` already exists, the command opens the existing file and does not overwrite it.
+
+To create or update the policy file with local telemetry enabled, run:
+
+```text
+Prompt Preflight: Enable Local Telemetry
+```
+
+To open an existing policy or preview the template without writing a file, run:
 
 ```text
 Prompt Preflight: Open Team Policy
@@ -628,7 +646,13 @@ Check:
 
 ### The analyzer CLI cannot be found
 
-Set:
+Installed VSIX users should not need `promptPreflight.repoPath`; the analyzer is bundled. First run:
+
+```text
+Prompt Preflight: Run Setup Doctor
+```
+
+If you are developing from source or intentionally testing a different checkout, set:
 
 ```json
 {
@@ -636,16 +660,10 @@ Set:
 }
 ```
 
-The path should point to the main repo checkout that contains:
+The override path should point to the main repo checkout that contains:
 
 ```text
 scripts/prompt_preflight.py
-```
-
-You can also run:
-
-```text
-Prompt Preflight: Run Setup Doctor
 ```
 
 It lists every CLI path the extension checked.
@@ -681,6 +699,14 @@ Local VSIX packaging is supported with:
 npm run package:vsix
 npm run package:audit
 ```
+
+From the repo root, maintainers can run the full automated release gate:
+
+```bash
+python3 scripts/release_check.py
+```
+
+That command builds a fresh temporary VSIX, audits its contents, installs it into a clean temporary VS Code profile, and verifies the extension ID.
 
 Marketplace publishing is not set up yet. Before publishing to the Marketplace, the project still needs publisher-token setup, Marketplace account verification, release workflow decisions, and final install-from-VSIX/manual UAT on a clean machine.
 

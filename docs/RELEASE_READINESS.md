@@ -4,12 +4,27 @@ Use this checklist before publishing the VS Code extension or announcing the rep
 
 Public release is ready only when every blocking item below is checked or explicitly deferred.
 
+Run the automated gates first:
+
+```bash
+python3 scripts/release_check.py
+```
+
+This command runs the Python unit tests, template-doc check, vague-prompt benchmark, VS Code extension tests, VSIX packaging, VSIX package audit, bundled-analyzer smoke test, and a clean temporary VSIX install. It prints the remaining manual gates at the end.
+
+If you are only validating analyzer changes and do not have Node 20+ or the VS Code CLI available, use:
+
+```bash
+python3 scripts/release_check.py --skip-vscode
+```
+
 ## Local quality gates
 
 - [ ] **Python tests pass** — `python3 -m unittest discover -s tests -q` passes from the repo root.
 - [ ] **VS Code extension tests pass** — `npm test` passes from `vscode-extension/`.
 - [ ] **Vague prompt benchmark passes** — `python3 scripts/benchmark_vague_prompts.py --min-block-rate 0.90` passes.
 - [ ] **Template docs are current** — `python3 scripts/generate_template_docs.py --check` passes.
+- [ ] **One-command release check passes** — `python3 scripts/release_check.py` passes from the repo root.
 
 ## VS Code clean-install gates
 
@@ -21,16 +36,16 @@ Public release is ready only when every blocking item below is checked or explic
 
 ## Public packaging gates
 
-- [ ] **Analyzer distribution decision is explicit** — Decide whether the Marketplace extension bundles the Python analyzer or requires `promptPreflight.repoPath`.
+- [ ] **Bundled analyzer is packaged** — The Marketplace VSIX includes `bundled-analyzer/scripts/prompt_preflight.py`; `promptPreflight.repoPath` is only a developer override.
 - [ ] **Publisher account and token are ready** — VS Code Marketplace publisher setup is complete and the publishing token is stored outside the repo.
 - [ ] **Versioning is decided** — Choose release version, changelog format, and whether this is public beta or stable.
-- [ ] **Package contents are audited** — `npm run package:list` and `npm run package:audit` include only intended extension files and exclude raw videos, node_modules, telemetry, local config, source, tests, and release tooling.
+- [ ] **Package contents are audited** — `npm run package:list` and `npm run package:audit` include only intended extension files plus the bundled analyzer, and exclude raw videos, node_modules, telemetry, local config, source, tests, and release tooling.
 
 ## Docs and launch gates
 
 - [ ] **README has current demo assets** — Root README includes the GIF/image assets and describes Codex, Claude, Kiro, CLI, and VS Code support accurately.
 - [ ] **VS Code README has screenshots or GIFs** — Extension README shows prompt check, suggested prompt insertion, Setup Doctor, and telemetry dashboard.
-- [ ] **Install docs are external-user friendly** — Docs explain Node 20, Python 3.10+, VSIX install, repoPath, and common troubleshooting.
+- [ ] **Install docs are external-user friendly** — Docs explain VSIX install, Python 3.10+, optional repoPath developer override, and common troubleshooting.
 - [ ] **Launch copy is aligned** — `docs/LAUNCH.md` and README claims match the latest benchmark and feature status.
 
 ## Privacy and safety gates

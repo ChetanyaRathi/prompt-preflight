@@ -111,9 +111,8 @@ function resolveTelemetryFilePath(workspacePath: string, configuredPath: unknown
 export function resolveTelemetryPolicy(workspacePath: string): TelemetryPolicy {
   const policyPath = path.join(workspacePath, ".prompt-preflight.json");
   const policy = readJsonObject(policyPath);
-  const telemetry = policy && isRecord(policy.telemetry) ? policy.telemetry : undefined;
 
-  if (!telemetry) {
+  if (!policy) {
     return {
       enabled: false,
       telemetryPath: path.join(workspacePath, DEFAULT_TELEMETRY_FILE_NAME),
@@ -121,9 +120,18 @@ export function resolveTelemetryPolicy(workspacePath: string): TelemetryPolicy {
     };
   }
 
+  const telemetry = policy.telemetry;
+  if (isRecord(telemetry)) {
+    return {
+      enabled: Boolean(telemetry.enabled),
+      telemetryPath: resolveTelemetryFilePath(workspacePath, telemetry.path),
+      source: "workspace-policy"
+    };
+  }
+
   return {
-    enabled: Boolean(telemetry.enabled),
-    telemetryPath: resolveTelemetryFilePath(workspacePath, telemetry.path),
+    enabled: Boolean(telemetry),
+    telemetryPath: resolveTelemetryFilePath(workspacePath, undefined),
     source: "workspace-policy"
   };
 }

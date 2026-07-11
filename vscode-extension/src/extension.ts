@@ -10,7 +10,7 @@ import {
 import { PromptPreflightCodeActionProvider } from "./promptCodeActions";
 import { PreflightAnalysis, runPreflight } from "./preflightClient";
 import { PromptDiagnosticsController } from "./promptDiagnostics";
-import { openTeamPolicy } from "./teamPolicy";
+import { createTeamPolicyFile, enableLocalTelemetry, openTeamPolicy } from "./teamPolicy";
 import { insertPromptTemplate } from "./templateInserter";
 import { WorkspacePromptLinter } from "./workspaceLinter";
 import { PromptComposerPanel } from "./promptComposerPanel";
@@ -547,6 +547,12 @@ export function activate(context: vscode.ExtensionContext): void {
       workspaceLinter.lintWorkspace()
     ),
     vscode.commands.registerCommand("promptPreflight.openTeamPolicy", () => openTeamPolicy()),
+    vscode.commands.registerCommand("promptPreflight.createTeamPolicy", () =>
+      createTeamPolicyFile()
+    ),
+    vscode.commands.registerCommand("promptPreflight.enableTelemetry", () =>
+      enableLocalTelemetry()
+    ),
     vscode.commands.registerCommand("promptPreflight.openComposer", () =>
       PromptComposerPanel.open(context, (prompt: string) => checkPromptText(context, prompt))
     ),

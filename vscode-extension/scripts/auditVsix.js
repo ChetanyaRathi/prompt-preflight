@@ -13,6 +13,9 @@ const FORBIDDEN_PATTERNS = [
   /^extension\/out\/test\//,
   /^extension\/\.vscode\//,
   /^extension\/scripts\//,
+  /^extension\/bundled-analyzer\/.*__pycache__\//,
+  /^extension\/bundled-analyzer\/.*\.pyc$/,
+  /^extension\/bundled-analyzer\/.*\.pyo$/,
   /^extension\/.*\.map$/,
   /^extension\/.*\.vsix$/,
   /^extension\/package-lock\.json$/,
@@ -31,7 +34,20 @@ const REQUIRED_FILES = [
   "extension/out/preflightClient.js",
   "extension/out/setupDoctor.js",
   "extension/out/telemetryDashboardPanel.js",
-  "extension/out/releaseReadiness.js"
+  "extension/out/releaseReadiness.js",
+  "extension/bundled-analyzer/scripts/prompt_preflight.py",
+  "extension/bundled-analyzer/src/prompt_preflight/cli.py",
+  "extension/bundled-analyzer/src/prompt_preflight/analyzer.py",
+  "extension/bundled-analyzer/src/prompt_preflight/data/prompt_templates.json",
+  "extension/bundled-analyzer/src/prompt_preflight/data/vague_prompts.txt",
+  "extension/bundled-analyzer/docs/EXAMPLES.md"
+];
+
+/**
+ * Text that must appear in the packaged README after vsce rewrites relative images.
+ */
+const REQUIRED_README_SNIPPETS = [
+  "https://raw.githubusercontent.com/akg268/prompt-preflight/master/vscode-extension/media/demo.gif"
 ];
 
 /**
@@ -53,6 +69,15 @@ function listVsixEntries(vsixPath) {
 }
 
 /**
+ * Reads one file from inside the VSIX package.
+ */
+function readVsixEntry(vsixPath, entryPath) {
+  return execFileSync("unzip", ["-p", vsixPath, entryPath], {
+    encoding: "utf8"
+  });
+}
+
+/**
  * Returns package entries that match any forbidden pattern.
  */
 function forbiddenEntries(entries) {
@@ -65,6 +90,14 @@ function forbiddenEntries(entries) {
 function missingRequiredFiles(entries) {
   const entrySet = new Set(entries);
   return REQUIRED_FILES.filter((required) => !entrySet.has(required));
+}
+
+/**
+ * Returns required README snippets that are missing from the packaged README.
+ */
+function missingReadmeSnippets(vsixPath) {
+  const readme = readVsixEntry(vsixPath, "extension/readme.md");
+  return REQUIRED_README_SNIPPETS.filter((snippet) => !readme.includes(snippet));
 }
 
 /**
@@ -89,6 +122,7 @@ function main() {
   const entries = listVsixEntries(vsixPath);
   const forbidden = forbiddenEntries(entries);
   const missing = missingRequiredFiles(entries);
+  const missingReadme = missingReadmeSnippets(vsixPath);
 
   printSummary(vsixPath, entries);
 
@@ -106,7 +140,14 @@ function main() {
     }
   }
 
-  if (forbidden.length || missing.length) {
+  if (missingReadme.length) {
+    console.error("\nRequired README snippets missing:");
+    for (const snippet of missingReadme) {
+      console.error(`- ${snippet}`);
+    }
+  }
+
+  if (forbidden.length || missing.length || missingReadme.length) {
     process.exit(1);
   }
 

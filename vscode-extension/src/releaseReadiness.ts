@@ -70,8 +70,8 @@ export function releaseChecklistSections(): ReleaseChecklistSection[] {
       title: "Public packaging gates",
       items: [
         {
-          label: "Analyzer distribution decision is explicit",
-          detail: "Decide whether the Marketplace extension bundles the Python analyzer or requires `promptPreflight.repoPath`."
+          label: "Bundled analyzer is packaged",
+          detail: "The Marketplace VSIX includes `bundled-analyzer/scripts/prompt_preflight.py`; `promptPreflight.repoPath` is only a developer override."
         },
         {
           label: "Publisher account and token are ready",
@@ -83,7 +83,7 @@ export function releaseChecklistSections(): ReleaseChecklistSection[] {
         },
         {
           label: "Package contents are audited",
-          detail: "`npm run package:list` and `npm run package:audit` include only intended extension files and exclude raw videos, node_modules, telemetry, local config, source, tests, and release tooling."
+          detail: "`npm run package:list` and `npm run package:audit` include only intended extension files plus the bundled analyzer, and exclude raw videos, node_modules, telemetry, local config, source, tests, and release tooling."
         }
       ]
     },
@@ -100,7 +100,7 @@ export function releaseChecklistSections(): ReleaseChecklistSection[] {
         },
         {
           label: "Install docs are external-user friendly",
-          detail: "Docs explain Node 20, Python 3.10+, VSIX install, repoPath, and common troubleshooting."
+          detail: "Docs explain VSIX install, Python 3.10+, optional repoPath developer override, and common troubleshooting."
         },
         {
           label: "Launch copy is aligned",

@@ -67,8 +67,8 @@ export class TelemetryDashboardPanel {
         if (message.type === "refresh") {
           this.refresh();
         }
-        if (message.type === "openTeamPolicy") {
-          void vscode.commands.executeCommand("promptPreflight.openTeamPolicy");
+        if (message.type === "enableTelemetry") {
+          void vscode.commands.executeCommand("promptPreflight.enableTelemetry");
         }
       },
       null,
@@ -170,7 +170,7 @@ function dashboardHtml(
     const openPolicy = document.getElementById("openPolicy");
     if (openPolicy) {
       openPolicy.addEventListener("click", () => {
-        vscode.postMessage({ type: "openTeamPolicy" });
+        vscode.postMessage({ type: "enableTelemetry" });
       });
     }
   </script>
@@ -217,13 +217,13 @@ function statusBanner(summary: TelemetryDashboardSummary): string {
     ? "VS Code checks will append prompt-free events because .prompt-preflight.json enables telemetry."
     : summary.policySource === "default"
       ? "No .prompt-preflight.json policy was found. Create one and set telemetry.enabled to true to record new VS Code checks."
-      : "Existing local files can still be viewed, but new VS Code checks will not be recorded until telemetry.enabled is true.";
+      : "The policy file exists, but new VS Code checks will not be recorded until telemetry.enabled is true. Top-level enabled only controls Prompt Preflight checks.";
   const malformed = summary.malformedLines
     ? `<p class="warning">${summary.malformedLines} malformed telemetry line${plural(summary.malformedLines)} skipped.</p>`
     : "";
   const policyAction = summary.telemetryEnabled
     ? ""
-    : `<button id="openPolicy" class="secondary" type="button">Open Team Policy</button>`;
+    : `<button id="openPolicy" class="secondary" type="button">Enable local telemetry</button>`;
 
   return `<section class="status panel">
     <div>

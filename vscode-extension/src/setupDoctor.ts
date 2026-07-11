@@ -122,7 +122,7 @@ export function buildSetupDoctorReport(input: SetupDoctorInput): SetupDoctorRepo
       "fail",
       "Python analyzer missing",
       `Could not find scripts/prompt_preflight.py. Checked ${candidateCliPaths.length} candidate path${candidateCliPaths.length === 1 ? "" : "s"}.`,
-      "Open the main prompt-preflight repo as the workspace, or set promptPreflight.repoPath to the repo checkout."
+      "A Marketplace VSIX should include bundled-analyzer/scripts/prompt_preflight.py. If you are developing from source, open the main prompt-preflight repo as the workspace or set promptPreflight.repoPath to the repo checkout."
     );
   }
 
@@ -177,7 +177,7 @@ export function buildSetupDoctorReport(input: SetupDoctorInput): SetupDoctorRepo
         telemetry.enabled ? "pass" : "warn",
         "Workspace policy found",
         `${policyPath}\nTelemetry: ${telemetry.enabled ? "enabled" : "disabled"}\nTelemetry file: ${telemetry.telemetryPath}`,
-        telemetry.enabled ? undefined : "Set telemetry.enabled to true to populate the local dashboard."
+        telemetry.enabled ? undefined : "Run Prompt Preflight: Enable Local Telemetry to update telemetry.enabled to true."
       );
     } else {
       addCheck(
@@ -185,7 +185,7 @@ export function buildSetupDoctorReport(input: SetupDoctorInput): SetupDoctorRepo
         "warn",
         "Workspace policy missing",
         `${policyPath} does not exist.`,
-        "Run Prompt Preflight: Open Team Policy, save it as .prompt-preflight.json, and enable telemetry if desired."
+        "Run Prompt Preflight: Enable Local Telemetry to create .prompt-preflight.json with telemetry.enabled set to true."
       );
     }
   }

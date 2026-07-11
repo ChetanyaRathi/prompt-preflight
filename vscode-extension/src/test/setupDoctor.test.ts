@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { buildSetupDoctorReport, setupDoctorMarkdown } from "../setupDoctor";
-import { cliPathForRepo } from "../repoResolver";
+import { bundledAnalyzerPath, cliPathForRepo } from "../repoResolver";
 import { runSuite } from "./testHarness";
 
 /**
@@ -56,6 +56,35 @@ export function runSetupDoctorTests(): void {
 
           assert.equal(report.checks.find((check) => check.title === "Python analyzer found")?.status, "pass");
           assert.equal(report.checks.find((check) => check.title === "Workspace policy found")?.status, "pass");
+        } finally {
+          fs.rmSync(root, { recursive: true, force: true });
+        }
+      }
+    },
+
+    /**
+     * Verifies installed VSIX users pass setup without setting repoPath when
+     * the package includes the bundled analyzer.
+     */
+    {
+      name: "reports healthy bundled analyzer install",
+      run: () => {
+        const root = tempRoot();
+        try {
+          const extensionPath = path.join(root, "home", ".vscode", "extensions", "prompt-preflight-vscode");
+          createCli(bundledAnalyzerPath(extensionPath));
+
+          const report = buildSetupDoctorReport({
+            extensionPath,
+            workspacePath: path.join(root, "workspace"),
+            pythonPath: "python3",
+            homeDir: path.join(root, "home")
+          });
+
+          const analyzer = report.checks.find((check) => check.title === "Python analyzer found");
+
+          assert.equal(analyzer?.status, "pass");
+          assert.match(analyzer?.detail || "", /bundled-analyzer/);
         } finally {
           fs.rmSync(root, { recursive: true, force: true });
         }
@@ -138,7 +167,7 @@ export function runSetupDoctorTests(): void {
               status: "warn" as const,
               title: "Workspace policy missing",
               detail: "No policy",
-              fix: "Open Team Policy"
+              fix: "Enable Local Telemetry"
             }
           ],
           candidateCliPaths: ["/tmp/prompt-preflight/scripts/prompt_preflight.py"]
@@ -147,7 +176,7 @@ export function runSetupDoctorTests(): void {
         const markdown = setupDoctorMarkdown(report);
 
         assert.match(markdown, /Prompt Preflight Setup Doctor/);
-        assert.match(markdown, /Open Team Policy/);
+        assert.match(markdown, /Enable Local Telemetry/);
         assert.match(markdown, /CLI paths checked/);
       }
     }

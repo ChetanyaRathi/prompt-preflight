@@ -132,6 +132,57 @@ export function runTelemetryStoreTests(): void {
     },
 
     /**
+     * Verifies boolean telemetry config matches the Python config behavior.
+     */
+    {
+      name: "supports boolean telemetry policy",
+      run: () => {
+        const workspace = tempWorkspace();
+        try {
+          fs.writeFileSync(
+            path.join(workspace, ".prompt-preflight.json"),
+            JSON.stringify({
+              telemetry: true
+            })
+          );
+
+          const policy = resolveTelemetryPolicy(workspace);
+
+          assert.equal(policy.enabled, true);
+          assert.equal(policy.source, "workspace-policy");
+          assert.equal(policy.telemetryPath, path.join(workspace, ".prompt-preflight-telemetry.jsonl"));
+        } finally {
+          cleanupWorkspace(workspace);
+        }
+      }
+    },
+
+    /**
+     * Verifies a policy without telemetry is still reported as a workspace policy.
+     */
+    {
+      name: "reports workspace policy when telemetry section is missing",
+      run: () => {
+        const workspace = tempWorkspace();
+        try {
+          fs.writeFileSync(
+            path.join(workspace, ".prompt-preflight.json"),
+            JSON.stringify({
+              enabled: true
+            })
+          );
+
+          const policy = resolveTelemetryPolicy(workspace);
+
+          assert.equal(policy.enabled, false);
+          assert.equal(policy.source, "workspace-policy");
+        } finally {
+          cleanupWorkspace(workspace);
+        }
+      }
+    },
+
+    /**
      * Verifies home-relative telemetry paths match the Python config behavior.
      */
     {

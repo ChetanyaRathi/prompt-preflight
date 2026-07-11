@@ -2,6 +2,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import * as vscode from "vscode";
 import { trackGeneratedPromptDocument } from "./generatedTabs";
+import { bundledAnalyzerPath } from "./repoResolver";
 import { FORMAT_LABEL, TemplateFormat, templateDocumentSpec } from "./templateDocument";
 
 /**
@@ -86,14 +87,14 @@ function configuredRepoPath(): string | undefined {
  */
 function candidateCatalogPaths(context: vscode.ExtensionContext): string[] {
   const configuredPath = configuredRepoPath();
-  const candidates = configuredPath
-    ? [configuredPath]
-    : [
-        path.resolve(context.extensionPath, ".."),
-        context.extensionPath
-      ];
+  const candidates = [
+    configuredPath,
+    path.resolve(context.extensionPath, ".."),
+    bundledAnalyzerPath(context.extensionPath),
+    context.extensionPath
+  ].filter((candidate): candidate is string => Boolean(candidate));
 
-  return candidates.map((repoPath) =>
+  return Array.from(new Set(candidates)).map((repoPath) =>
     path.join(repoPath, "src", "prompt_preflight", "data", "prompt_templates.json")
   );
 }
@@ -115,7 +116,7 @@ async function loadTemplateCatalog(context: vscode.ExtensionContext): Promise<Te
   throw new Error(
     [
       "could not find src/prompt_preflight/data/prompt_templates.json.",
-      "Set promptPreflight.repoPath to your prompt-preflight checkout.",
+      "The VSIX should include a bundled template catalog. If you are developing from source, set promptPreflight.repoPath to your prompt-preflight checkout.",
       `Checked: ${candidates.join(", ")}`
     ].join(" ")
   );

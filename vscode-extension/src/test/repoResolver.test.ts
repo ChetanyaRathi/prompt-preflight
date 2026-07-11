@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import {
+  bundledAnalyzerPath,
   cliPathForRepo,
   repoPathCandidates,
   resolveRepoPathFromCandidates
@@ -107,6 +108,33 @@ export function runRepoResolverTests(): void {
     },
 
     /**
+     * Verifies a Marketplace-style installed extension can use its packaged
+     * analyzer without requiring promptPreflight.repoPath.
+     */
+    {
+      name: "uses bundled analyzer when no repo checkout is available",
+      run: () => {
+        const root = tempDir();
+        try {
+          const workspace = path.join(root, "workspace");
+          const extension = path.join(root, ".vscode", "extensions", "prompt-preflight-vscode");
+          const bundled = bundledAnalyzerPath(extension);
+          fs.mkdirSync(workspace, { recursive: true });
+          markAsPromptPreflightRepo(bundled);
+
+          const resolved = resolveRepoPathFromCandidates({
+            extensionPath: extension,
+            workspacePath: workspace
+          });
+
+          assert.equal(resolved, bundled);
+        } finally {
+          fs.rmSync(root, { recursive: true, force: true });
+        }
+      }
+    },
+
+    /**
      * Verifies the checked path list includes useful fallback candidates.
      */
     {
@@ -123,6 +151,7 @@ export function runRepoResolverTests(): void {
           "/tmp/workspace",
           "/tmp/workspace/prompt-preflight"
         ]);
+        assert.ok(candidates.includes("/tmp/extensions/prompt-preflight-vscode/bundled-analyzer"));
       }
     }
   ]);
