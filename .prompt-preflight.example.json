@@ -19,5 +19,10 @@
   "telemetry": {
     "enabled": false,
     "path": ".prompt-preflight-telemetry.jsonl"
+  },
+  "token_observability": {
+    "enabled": true,
+    "default_max_output_tokens": 1000,
+    "estimated_retry_output_tokens": 800
   }
 }

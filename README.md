@@ -2,7 +2,7 @@
 
 > Catch underspecified requests before they become expensive model turns.
 
-Prompt Preflight is a local Codex plugin, Claude Code plugin, Kiro hook, and standalone CLI that checks whether a prompt is safe and specific enough to act on. It now looks at prompt clarity, missing context, output expectations, high-risk operations, plan-first needs, and likely secrets before an AI agent spends a model turn. When ambiguity or risk is high, it pauses the request and gives the user:
+Prompt Preflight is a local Codex plugin, Claude Code plugin, Kiro hook, VS Code extension, and standalone CLI that checks whether a prompt is safe and specific enough to act on. It now looks at prompt clarity, missing context, output expectations, high-risk operations, plan-first needs, and likely secrets before an AI agent spends a model turn. When ambiguity or risk is high, it pauses the request and gives the user:
 
 1. Their original prompt.
 2. A domain-aware example of a stronger prompt.
@@ -168,6 +168,7 @@ The model receives a target, outcome, boundaries, and definition of done before 
 - Supports configurable block and nudge modes.
 - Fails open if hook input is malformed.
 - Provides structured JSON for evaluation and debugging.
+- Includes a VS Code extension for checking prompt files, composing structured prompts, running workspace prompt lint, showing inline diagnostics, and viewing local telemetry graphs. The VSIX bundles the Python analyzer, so normal users do not need a repo checkout or `promptPreflight.repoPath`. See [Prompt Preflight for VS Code](vscode-extension/README.md).
 
 ## How the decision works
 
@@ -517,6 +518,11 @@ Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro
   "telemetry": {
     "enabled": false,
     "path": ".prompt-preflight-telemetry.jsonl"
+  },
+  "token_observability": {
+    "enabled": true,
+    "default_max_output_tokens": 1000,
+    "estimated_retry_output_tokens": 800
   }
 }
 ```
@@ -528,6 +534,7 @@ Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro
 - `max_questions`: limit clarification questions from 1 to 5.
 - `enabled`: disable Prompt Preflight for a project.
 - `telemetry`: optional local-only counts; disabled by default.
+- `token_observability`: optional local token estimates for reports; enabled by default when telemetry is recorded.
 
 ### Per-Check Safe Defaults
 
@@ -556,6 +563,7 @@ Run it on a response (exit `0` = clean, `2` = needs attention):
 ```
 python3 scripts/prompt_postflight.py --prompt "Return the result as JSON" "the status is ok"
 python3 scripts/prompt_postflight.py --json --prompt "Research X with citations" "$(cat answer.txt)"
+python3 scripts/prompt_postflight.py --record-telemetry --prompt "Return JSON" "the answer is 42"
 ```
 
 Configure it in `.prompt-preflight.json` under an optional `postflight` block.
@@ -585,6 +593,8 @@ soften any check to `nudge` (surfaced but non-blocking) or `off`:
 | Claude Code | `scripts/prompt_preflight_postflight_claude_hook.py` | `Stop` | Prototype (verify hook contract) |
 | Codex / Kiro | — | — | Not supported yet |
 
+Postflight telemetry is available through the CLI and the Claude Code Stop-hook adapter. Codex and Kiro are still preflight-only until those hosts expose or confirm a post-response hook surface.
+
 ## Local telemetry
 
 Prompt Preflight can record local, opt-in telemetry to help estimate avoided retry loops. It is disabled by default.
@@ -596,6 +606,11 @@ Enable it in `.prompt-preflight.json`:
   "telemetry": {
     "enabled": true,
     "path": ".prompt-preflight-telemetry.jsonl"
+  },
+  "token_observability": {
+    "enabled": true,
+    "default_max_output_tokens": 1000,
+    "estimated_retry_output_tokens": 800
   }
 }
 ```
@@ -609,6 +624,14 @@ Users see telemetry only when they run a report command. The normal workflow is:
 4. Run --telemetry-report to see the summary.
 ```
 
+VS Code users can also open a local graph dashboard:
+
+```text
+Prompt Preflight: Open Telemetry Dashboard
+```
+
+The dashboard reads the same local JSONL telemetry file and renders cards plus bar charts for decisions, block reasons, hosts, daily activity, postflight checks, and token-risk buckets.
+
 The telemetry file stores only aggregate fields:
 
 - host, such as `codex`, `claude-code`, `kiro`, or `cli`
@@ -616,9 +639,16 @@ The telemetry file stores only aggregate fields:
 - detected intent
 - clarification score, ambiguity score, and impact score
 - reason count and question count
+- prompt and response character counts
+- prompt and response token estimates
+- estimated total request tokens
+- token risk buckets (`low`, `medium`, `high`)
+- estimated avoided retry token opportunity for blocked preflight prompts
 - timestamp
 
 It does not store prompt text, suggested rewrites, clarification questions, reason strings, file contents, or conversation history.
+
+Token observability uses a local deterministic estimate (`~4 characters = 1 token`). It is useful for trend and risk reporting, but it is not provider billing truth and does not replace provider usage dashboards.
 
 Generate a report from the project directory (or any parent directory that contains `.prompt-preflight.json`):
 
@@ -662,7 +692,22 @@ Clarification opportunities: 21
 Estimated avoided retry turns: 18
 Average clarification score: 58.7/100
 
-Privacy: this file stores counts, decisions, hosts, intents, and scores only.
+Postflight
+Responses checked: 4
+Responses needing attention: 1
+  - output_format: 1
+
+Token observability
+Events with token estimates: 46
+Visible prompt tokens estimated: 12840
+Estimated request tokens reserved: 58840
+Estimated response tokens observed: 2310
+Estimated avoided retry token opportunity: 15840
+Prompt token risk:
+  - low: 44
+  - medium: 2
+
+Privacy: this file stores counts, decisions, hosts, intents, check categories, scores, and token estimates only.
 It does not store prompt text, suggested rewrites, questions, or reason strings.
 ```
 
@@ -675,6 +720,8 @@ python3 scripts/prompt_preflight.py \
 ```
 
 `Estimated avoided retry turns` is intentionally conservative: it counts prompts blocked before model work as one likely avoided failed attempt. It is an estimate, not a token-savings guarantee.
+
+`Estimated avoided retry token opportunity` is also conservative. For each blocked preflight prompt, it adds the visible prompt token estimate plus the configured `estimated_retry_output_tokens`. It does not claim exact provider savings.
 
 ## Privacy and security
 
@@ -695,6 +742,22 @@ As with any local plugin, review `.codex-plugin/plugin.json`, `hooks/hooks.json`
 For Claude Code, review `.claude-plugin/plugin.json`, `hooks/claude-hooks.json`, and `scripts/prompt_preflight_claude_hook.py`.
 
 For Kiro, review the generated `.kiro/hooks/prompt-preflight.json` file and `scripts/prompt_preflight_kiro_hook.py`.
+
+## Release readiness
+
+Prompt Preflight is not ready for a broad public Marketplace release until the
+release gates in [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) are
+complete or explicitly deferred. The key gates are clean VSIX install, green
+Setup Doctor, working telemetry dashboard, current docs/screenshots, privacy
+verification, package audit, and repo hygiene.
+
+Run the automated release gates from the repo root:
+
+```bash
+python3 scripts/release_check.py
+```
+
+That runs Python tests, template-doc validation, the vague-prompt benchmark, VS Code tests, VSIX packaging, VSIX package audit, bundled-analyzer smoke test, and a clean temporary VSIX install. It also prints the remaining manual gates that still need human UAT.
 
 ## Limitations
 

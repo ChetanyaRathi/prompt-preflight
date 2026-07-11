@@ -41,7 +41,7 @@ Body:
 > request and returns a tailored rewrite plus up to three targeted questions.
 >
 > It uses deterministic Python rules. No model calls, no network, no API key.
-> The bundled 100-prompt benchmark catches 98/100 vague prompts today and is
+> The bundled 168-prompt benchmark catches 168/168 vague prompts today and is
 > meant as a regression guard, not a savings guarantee.
 >
 > Repo and install instructions: <link to repo>
@@ -69,7 +69,7 @@ Body:
 >
 > - Deterministic Python rules, no model or network calls
 > - Plugs into Codex, Claude Code, Kiro, or runs as a standalone CLI
-> - Ships with a 100-prompt benchmark for regression testing
+> - Ships with a 168-prompt benchmark for regression testing
 > - MIT licensed
 >
 > Repo: <link to repo>
@@ -94,7 +94,7 @@ Body:
 >
 > - Works with Codex, Claude Code, Kiro, or as a standalone CLI
 > - No model calls, no network, no API key
-> - Ships with a 100-prompt regression benchmark
+> - Ships with a 168-prompt regression benchmark
 > - MIT licensed
 >
 > Repo: <link to repo>
@@ -119,7 +119,7 @@ Thread (optional follow-ups):
 >    by detected intent (software build, bug fix, deployment, migration,
 >    optimization, image generation).
 >
-> 3/ 100-prompt benchmark is included as a regression guard. The repo has a
+> 3/ 168-prompt benchmark is included as a regression guard. The repo has a
 >    one-command demo: `python3 scripts/demo.py`.
 
 ## GIF or short-video recording checklist
