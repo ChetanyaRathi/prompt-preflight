@@ -7,7 +7,7 @@ suggested rewrites, clarification questions, or reason strings.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 from pathlib import Path
 from typing import Any, Iterable
@@ -110,11 +110,63 @@ def decision_for_analysis(analysis: Analysis, *, mode: str) -> str:
     return "allowed"
 
 
-def record_event(path: Path, event: dict[str, Any]) -> None:
+def record_event(
+    path: Path, 
+    event: dict[str, Any],
+    *,
+    max_events: int | None = None,
+    max_bytes: int | None = None,
+    retention_days: int | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(event, sort_keys=True, separators=(",", ":")))
-        handle.write("\n")
+    
+    if max_events is None and max_bytes is None and retention_days is None:
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(event, sort_keys=True, separators=(",", ":")))
+            handle.write("\n")
+        return
+
+    events = read_events(path)
+    events.append(event)
+
+    if retention_days is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        pruned_events = []
+        for e in events:
+            ts_str = e.get("timestamp")
+            if not ts_str:
+                pruned_events.append(e)
+                continue
+            
+            try:
+                if ts_str.endswith('Z'):
+                    ts_str = ts_str[:-1] + '+00:00'
+                ts = datetime.fromisoformat(ts_str)
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if ts >= cutoff:
+                    pruned_events.append(e)
+            except (ValueError, TypeError):
+                pruned_events.append(e)
+        events = pruned_events
+
+    if max_events is not None:
+        if len(events) > max_events:
+            events = events[-max_events:]
+
+    lines = [json.dumps(e, sort_keys=True, separators=(",", ":")) + "\n" for e in events]
+
+    if max_bytes is not None:
+        total_size = sum(len(line.encode("utf-8")) for line in lines)
+        while total_size > max_bytes and lines:
+            total_size -= len(lines[0].encode("utf-8"))
+            lines.pop(0)
+
+    temp_path = path.with_suffix(".tmp")
+    with temp_path.open("w", encoding="utf-8") as handle:
+        for line in lines:
+            handle.write(line)
+    temp_path.replace(path)
 
 
 def record_analysis(
@@ -124,6 +176,9 @@ def record_analysis(
     mode: str,
     telemetry_path: Path | None,
     enabled: bool,
+    max_events: int | None = None,
+    max_bytes: int | None = None,
+    retention_days: int | None = None,
     timestamp_mode: str = "exact",
     token_observability_enabled: bool = True,
     token_default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
@@ -142,6 +197,9 @@ def record_analysis(
             token_default_max_output_tokens=token_default_max_output_tokens,
             token_estimated_retry_output_tokens=token_estimated_retry_output_tokens,
         ),
+        max_events=max_events,
+        max_bytes=max_bytes,
+        retention_days=retention_days,
     )
 
 
@@ -152,6 +210,9 @@ def record_analysis_safely(
     mode: str,
     telemetry_path: Path | None,
     enabled: bool,
+    max_events: int | None = None,
+    max_bytes: int | None = None,
+    retention_days: int | None = None,
     timestamp_mode: str = "exact",
     token_observability_enabled: bool = True,
     token_default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
@@ -164,6 +225,9 @@ def record_analysis_safely(
             mode=mode,
             telemetry_path=telemetry_path,
             enabled=enabled,
+            max_events=max_events,
+            max_bytes=max_bytes,
+            retention_days=retention_days,
             timestamp_mode=timestamp_mode,
             token_observability_enabled=token_observability_enabled,
             token_default_max_output_tokens=token_default_max_output_tokens,

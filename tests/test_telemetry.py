@@ -277,6 +277,103 @@ A red vintage Mustang on a rainy neon street
                 root.resolve() / ".prompt-preflight-telemetry.jsonl",
             )
 
+    def test_record_max_events(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "telemetry.jsonl"
+            for i in range(5):
+                record_analysis(analyze_prompt("Create a car image"), host="codex", mode="block", telemetry_path=path, enabled=True, max_events=3)
+            events = read_events(path)
+            self.assertEqual(len(events), 3)
+
+    def test_record_max_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "telemetry.jsonl"
+            for i in range(5):
+                record_analysis(analyze_prompt("Create a car image"), host="codex", mode="block", telemetry_path=path, enabled=True)
+            
+            record_analysis(analyze_prompt("Create a car image"), host="codex", mode="block", telemetry_path=path, enabled=True, max_bytes=450)
+            events = read_events(path)
+            self.assertTrue(len(events) < 6)
+            self.assertTrue(path.stat().st_size <= 450)
+
+    def test_record_retention_days(self) -> None:
+        from datetime import datetime, timezone, timedelta
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "telemetry.jsonl"
+            old_time = (datetime.now(timezone.utc) - timedelta(days=40)).isoformat()
+            new_time = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+            
+            from prompt_preflight.telemetry import record_event, telemetry_event
+            analysis = analyze_prompt("Create a car image")
+            e1 = telemetry_event(analysis, host="test", decision="blocked")
+            e1["timestamp"] = old_time
+            record_event(path, e1)
+            
+            e2 = telemetry_event(analysis, host="test", decision="blocked")
+            e2["timestamp"] = new_time
+            record_event(path, e2)
+            
+            record_analysis(analysis, host="test", mode="block", telemetry_path=path, enabled=True, retention_days=30)
+            
+            events = read_events(path)
+            self.assertEqual(len(events), 2)
+            self.assertEqual(events[0]["timestamp"], new_time)
+
+    def test_retention_days_skips_missing_timestamps(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "telemetry.jsonl"
+            
+            from prompt_preflight.telemetry import record_event, telemetry_event
+            analysis = analyze_prompt("Create a car image")
+            
+            e1 = telemetry_event(analysis, host="test", decision="blocked")
+            if "timestamp" in e1:
+                del e1["timestamp"]
+            record_event(path, e1)
+            
+            e2 = telemetry_event(analysis, host="test", decision="blocked")
+            e2["timestamp"] = "not-a-date"
+            record_event(path, e2)
+            
+            record_analysis(analysis, host="test", mode="block", telemetry_path=path, enabled=True, retention_days=30)
+            
+            events = read_events(path)
+            self.assertEqual(len(events), 3)
+            
+    def test_record_combined_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "telemetry.jsonl"
+            for i in range(5):
+                record_analysis(analyze_prompt("Create a car image"), host="codex", mode="block", telemetry_path=path, enabled=True)
+            
+            record_analysis(analyze_prompt("Create a car image"), host="codex", mode="block", telemetry_path=path, enabled=True, max_events=4, max_bytes=450)
+            events = read_events(path)
+            self.assertTrue(len(events) <= 2)
+            self.assertTrue(path.stat().st_size <= 450)
+
+    def test_config_retention_parsing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "max_events": 100, "max_bytes": 500, "retention_days": 14}}),
+                encoding="utf-8",
+            )
+            config = load_config(root)
+            self.assertEqual(config.telemetry_max_events, 100)
+            self.assertEqual(config.telemetry_max_bytes, 500)
+            self.assertEqual(config.telemetry_retention_days, 14)
+
+    def test_config_retention_invalid_types_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            Path(root, ".prompt-preflight.json").write_text(
+                json.dumps({"telemetry": {"enabled": True, "max_events": -5, "max_bytes": "foo", "retention_days": 0}}),
+                encoding="utf-8",
+            )
+            config = load_config(root)
+            self.assertIsNone(config.telemetry_max_events)
+            self.assertIsNone(config.telemetry_max_bytes)
+            self.assertIsNone(config.telemetry_retention_days)
 
 class TelemetryReportCliTests(unittest.TestCase):
     def _write_event(self, path: Path) -> None:

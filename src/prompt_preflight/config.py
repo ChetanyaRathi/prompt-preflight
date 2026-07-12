@@ -19,6 +19,9 @@ class Config:
     max_questions: int = 3
     telemetry_enabled: bool = False
     telemetry_path: Path | None = None
+    telemetry_max_events: int | None = None
+    telemetry_max_bytes: int | None = None
+    telemetry_retention_days: int | None = None
     telemetry_timestamp_mode: str = "exact"
     token_observability_enabled: bool = True
     token_default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
@@ -55,11 +58,28 @@ def _telemetry_path_from_raw(raw: dict[str, Any], directory: Path) -> Path:
 
 def _telemetry_settings(
     raw: dict[str, Any], directory: Path
-) -> tuple[bool, Path | None, str]:
+) -> tuple[bool, Path | None, int | None, int | None, int | None, str]:
     telemetry = raw.get("telemetry", False)
+    max_events = None
+    max_bytes = None
+    retention_days = None
     timestamp_mode = "exact"
+
     if isinstance(telemetry, dict):
         enabled = bool(telemetry.get("enabled", False))
+        
+        raw_events = telemetry.get("max_events")
+        if isinstance(raw_events, int) and raw_events > 0:
+            max_events = raw_events
+            
+        raw_bytes = telemetry.get("max_bytes")
+        if isinstance(raw_bytes, int) and raw_bytes > 0:
+            max_bytes = raw_bytes
+            
+        raw_days = telemetry.get("retention_days")
+        if isinstance(raw_days, int) and raw_days > 0:
+            retention_days = raw_days
+
         mode_val = telemetry.get("timestamp_mode", "exact")
         if mode_val in ("exact", "date", "none"):
             timestamp_mode = mode_val
@@ -67,9 +87,9 @@ def _telemetry_settings(
         enabled = bool(telemetry)
 
     if not enabled:
-        return False, None, timestamp_mode
+        return False, None, max_events, max_bytes, retention_days, timestamp_mode
 
-    return True, _telemetry_path_from_raw(raw, directory), timestamp_mode
+    return True, _telemetry_path_from_raw(raw, directory), max_events, max_bytes, retention_days, timestamp_mode
 
 
 def _bounded_int(value: Any, default: int, *, minimum: int = 0, maximum: int = 1_000_000) -> int:
@@ -120,7 +140,7 @@ def load_config(cwd: str | Path | None = None) -> Config:
         if path.is_file():
             try:
                 raw: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-                telemetry_enabled, telemetry_path, telemetry_timestamp_mode = _telemetry_settings(raw, directory)
+                telemetry_enabled, telemetry_path, telemetry_max_events, telemetry_max_bytes, telemetry_retention_days, telemetry_timestamp_mode = _telemetry_settings(raw, directory)
                 (
                     token_observability_enabled,
                     token_default_max_output_tokens,
@@ -187,6 +207,9 @@ def load_config(cwd: str | Path | None = None) -> Config:
                     max_questions=max(1, min(5, int(raw.get("max_questions", 3)))),
                     telemetry_enabled=telemetry_enabled,
                     telemetry_path=telemetry_path,
+                    telemetry_max_events=telemetry_max_events,
+                    telemetry_max_bytes=telemetry_max_bytes,
+                    telemetry_retention_days=telemetry_retention_days,
                     telemetry_timestamp_mode=telemetry_timestamp_mode,
                     token_observability_enabled=token_observability_enabled,
                     token_default_max_output_tokens=token_default_max_output_tokens,

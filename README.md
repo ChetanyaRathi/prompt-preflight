@@ -555,6 +555,9 @@ Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro
   "telemetry": {
     "enabled": false,
     "path": ".prompt-preflight-telemetry.jsonl",
+    "max_events": 1000,
+    "max_bytes": 1048576,
+    "retention_days": 30
     "timestamp_mode": "exact"
     "path": ".prompt-preflight-telemetry.jsonl"
   },
@@ -572,6 +575,7 @@ Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro
 - `severity_thresholds`: defines the severity ("low", "medium", "high") needed to trigger a "block" or "nudge" per check.
 - `max_questions`: limit clarification questions from 1 to 5.
 - `enabled`: disable Prompt Preflight for a project.
+- `telemetry`: optional local-only counts; disabled by default. Under `telemetry`, you can configure `max_events` (integer limit), `max_bytes` (integer size limit), and `retention_days` (integer age limit) to automatically prune the file (oldest events first) so it stays bounded without manual cleanup. Note that `retention_days` requires timestamps; if you disable timestamps via a `timestamp_mode` of "none", age-based pruning will be skipped gracefully.
 - `telemetry`: optional local-only counts; disabled by default. Under `telemetry`, `timestamp_mode` ("exact", "date", or "none") sets the precision of per-event timestamps. "exact" gives precise analysis but can reveal usage timing, "date" reduces granularity to the day, and "none" removes per-event timing. The default is "exact".
 - `telemetry`: optional local-only counts; disabled by default.
 - `token_observability`: optional local token estimates for reports; enabled by default when telemetry is recorded.
@@ -637,7 +641,7 @@ Postflight telemetry is available through the CLI and the Claude Code Stop-hook 
 
 ## Local telemetry
 
-Prompt Preflight can record local, opt-in telemetry to help estimate avoided retry loops. It is disabled by default.
+Prompt Preflight can record local, opt-in telemetry to help estimate avoided retry loops. It is disabled by default. If bounded via `max_events`, `max_bytes`, or `retention_days` in configuration, the file will automatically rotate by pruning older events at write time.
 
 Enable it in `.prompt-preflight.json`:
 
