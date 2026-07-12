@@ -32,6 +32,20 @@ The Marketplace package bundles the Python analyzer, so normal users do not need
 
 ![Prompt Preflight VS Code demo](media/demo.gif)
 
+## Spec-driven template flow
+
+1. Open the Command Palette and run "Prompt Preflight: New Prompt Template"
+   ![Command Palette showing "Prompt Preflight: New Prompt Template"](https://raw.githubusercontent.com/akg268/prompt-preflight/main/vscode-extension/media/spec-flow-01-palette.png)
+
+2. Choose a format (Markdown, TOML, or XML)
+   ![format picker: Markdown / TOML / XML](https://raw.githubusercontent.com/akg268/prompt-preflight/main/vscode-extension/media/spec-flow-02-format.png)
+
+3. Choose a prompt template profile (e.g. feature_spec or agent_execution_prompt)
+   ![profile picker: general, agent_execution_prompt, feature_spec, etc.](https://raw.githubusercontent.com/akg268/prompt-preflight/main/vscode-extension/media/spec-flow-03-profile.png)
+
+4. Run the preflight check to see intent, vagueness score, and any missing required fields
+   ![Prompt Preflight Result: intent, vagueness score, decision, missing-field reasons](https://raw.githubusercontent.com/akg268/prompt-preflight/main/vscode-extension/media/spec-flow-04-result.png)
+
 ## Why use it?
 
 AI-agent prompts often live in Markdown notes, team prompt libraries, docs, tickets, or scratch files before they are pasted into a model. This extension helps catch vague or risky prompts earlier, while the prompt is still being written.
