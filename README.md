@@ -47,7 +47,7 @@ When Prompt Preflight catches a vague prompt, it links to vague prompt examples 
 
 Prompt Preflight also includes [structured prompt templates](docs/TEMPLATES.md) in Markdown, XML, and TOML. These prompt contracts define mandatory fields such as task, context, output format, constraints, and success criteria, plus domain-specific fields for image generation, writing, research, data analysis, presentations, and spec-driven development.
 
-The spec-driven development pack includes feature specs, requirements specs, technical design specs, implementation plans, agent execution prompts, and spec review checklists. It is designed for teams that want Codex, Claude Code, Kiro, or another coding agent to work from a complete spec instead of a vague one-line request.
+The spec-driven development pack includes feature specs, requirements specs, technical design specs, implementation plans, agent execution prompts, and spec review checklists. It is designed for teams that want Codex, Claude Code, Kiro, or another coding agent to work from a complete spec instead of a vague one-line request. See the [Spec-Driven Development Examples](docs/SPEC_DRIVEN_EXAMPLES.md) for a complete end-to-end workflow.
 
 The canonical vague-prompt library lives in [`src/prompt_preflight/data/vague_prompts.txt`](src/prompt_preflight/data/vague_prompts.txt). Codex, Claude Code, Kiro, the CLI, and the benchmark all use the same Python package, so new vague-prompt examples should be added there instead of creating tool-specific lists.
 
