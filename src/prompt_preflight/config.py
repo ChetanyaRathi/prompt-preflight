@@ -19,6 +19,7 @@ class Config:
     max_questions: int = 3
     telemetry_enabled: bool = False
     telemetry_path: Path | None = None
+    telemetry_timestamp_mode: str = "exact"
     token_observability_enabled: bool = True
     token_default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
     token_estimated_retry_output_tokens: int = DEFAULT_RETRY_OUTPUT_TOKENS
@@ -52,17 +53,23 @@ def _telemetry_path_from_raw(raw: dict[str, Any], directory: Path) -> Path:
     return path
 
 
-def _telemetry_settings(raw: dict[str, Any], directory: Path) -> tuple[bool, Path | None]:
+def _telemetry_settings(
+    raw: dict[str, Any], directory: Path
+) -> tuple[bool, Path | None, str]:
     telemetry = raw.get("telemetry", False)
+    timestamp_mode = "exact"
     if isinstance(telemetry, dict):
         enabled = bool(telemetry.get("enabled", False))
+        mode_val = telemetry.get("timestamp_mode", "exact")
+        if mode_val in ("exact", "date", "none"):
+            timestamp_mode = mode_val
     else:
         enabled = bool(telemetry)
 
     if not enabled:
-        return False, None
+        return False, None, timestamp_mode
 
-    return True, _telemetry_path_from_raw(raw, directory)
+    return True, _telemetry_path_from_raw(raw, directory), timestamp_mode
 
 
 def _bounded_int(value: Any, default: int, *, minimum: int = 0, maximum: int = 1_000_000) -> int:
@@ -113,29 +120,50 @@ def load_config(cwd: str | Path | None = None) -> Config:
         if path.is_file():
             try:
                 raw: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-                telemetry_enabled, telemetry_path = _telemetry_settings(raw, directory)
+                telemetry_enabled, telemetry_path, telemetry_timestamp_mode = _telemetry_settings(raw, directory)
                 (
                     token_observability_enabled,
                     token_default_max_output_tokens,
                     token_estimated_retry_output_tokens,
                 ) = _token_observability_settings(raw)
-                
                 raw_mode = raw.get("mode")
                 mode = raw_mode if raw_mode in {"block", "nudge"} else "block"
-                
+
                 checks = None
                 raw_checks = raw.get("checks")
                 if raw_checks is not None and isinstance(raw_checks, dict):
                     checks = {}
-                    for category in ["clarity", "context", "output_contract", "template_contract", "risk", "plan_first", "privacy"]:
+                    for category in [
+                        "clarity",
+                        "context",
+                        "output_contract",
+                        "template_contract",
+                        "risk",
+                        "plan_first",
+                        "privacy",
+                    ]:
                         if category in raw_checks:
                             val = raw_checks[category]
                             if val in ("block", "nudge", "disable", "off"):
                                 checks[category] = "disable" if val == "off" else val
                             else:
-                                checks[category] = "block" if category == "privacy" else (mode if raw_mode in ("block", "nudge") else "nudge")
+                                checks[category] = (
+                                    "block"
+                                    if category == "privacy"
+                                    else (
+                                        mode
+                                        if raw_mode in ("block", "nudge")
+                                        else "nudge"
+                                    )
+                                )
                         else:
-                            checks[category] = "block" if category == "privacy" else (mode if raw_mode in ("block", "nudge") else "nudge")
+                            checks[category] = (
+                                "block"
+                                if category == "privacy"
+                                else (
+                                    mode if raw_mode in ("block", "nudge") else "nudge"
+                                )
+                            )
 
                 severity_thresholds = None
                 raw_sev = raw.get("severity_thresholds")
@@ -146,10 +174,12 @@ def load_config(cwd: str | Path | None = None) -> Config:
                         if val in ("low", "medium", "high"):
                             severity_thresholds[m] = val
                         else:
-                            severity_thresholds[m] = "high" if m == "block" else "medium"
+                            severity_thresholds[m] = (
+                                "high" if m == "block" else "medium"
+                            )
                 elif raw_sev is not None:
                     severity_thresholds = {"block": "high", "nudge": "medium"}
-                
+
                 return Config(
                     enabled=bool(raw.get("enabled", True)),
                     mode=mode,
@@ -157,6 +187,7 @@ def load_config(cwd: str | Path | None = None) -> Config:
                     max_questions=max(1, min(5, int(raw.get("max_questions", 3)))),
                     telemetry_enabled=telemetry_enabled,
                     telemetry_path=telemetry_path,
+                    telemetry_timestamp_mode=telemetry_timestamp_mode,
                     token_observability_enabled=token_observability_enabled,
                     token_default_max_output_tokens=token_default_max_output_tokens,
                     token_estimated_retry_output_tokens=token_estimated_retry_output_tokens,

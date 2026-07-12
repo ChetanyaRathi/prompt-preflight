@@ -18,6 +18,8 @@
   },
   "telemetry": {
     "enabled": false,
+    "path": ".prompt-preflight-telemetry.jsonl",
+    "timestamp_mode": "exact"
     "path": ".prompt-preflight-telemetry.jsonl"
   },
   "token_observability": {

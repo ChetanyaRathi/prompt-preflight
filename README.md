@@ -548,6 +548,8 @@ Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro
   },
   "telemetry": {
     "enabled": false,
+    "path": ".prompt-preflight-telemetry.jsonl",
+    "timestamp_mode": "exact"
     "path": ".prompt-preflight-telemetry.jsonl"
   },
   "token_observability": {
@@ -564,6 +566,7 @@ Create `.prompt-preflight.json` in the project where Codex, Claude Code, or Kiro
 - `severity_thresholds`: defines the severity ("low", "medium", "high") needed to trigger a "block" or "nudge" per check.
 - `max_questions`: limit clarification questions from 1 to 5.
 - `enabled`: disable Prompt Preflight for a project.
+- `telemetry`: optional local-only counts; disabled by default. Under `telemetry`, `timestamp_mode` ("exact", "date", or "none") sets the precision of per-event timestamps. "exact" gives precise analysis but can reveal usage timing, "date" reduces granularity to the day, and "none" removes per-event timing. The default is "exact".
 - `telemetry`: optional local-only counts; disabled by default.
 - `token_observability`: optional local token estimates for reports; enabled by default when telemetry is recorded.
 
@@ -670,6 +673,7 @@ The telemetry file stores only aggregate fields:
 - detected intent
 - clarification score, ambiguity score, and impact score
 - reason count and question count
+- timestamp (precision is configurable via `timestamp_mode`)
 - prompt and response character counts
 - prompt and response token estimates
 - estimated total request tokens
