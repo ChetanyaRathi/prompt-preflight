@@ -21,11 +21,11 @@ from .templates import (
 BYPASS_MARKERS = ("[preflight:skip]", "#preflight-ignore", "/preflight-skip")
 
 ACTION_RE = re.compile(
-    r"\b(add|analy[sz]e|build|calculate|change|clean(?:\s*up)?|compare|convert|create|"
-    r"delete|deploy|design|destroy|draft|draw|drop|edit|evaluate|find|fix|generate|illustrate|implement|"
-    r"improve|integrate|investigate|look\s+into|make|migrate|modernize|optimi[sz]e|outline|paint|"
-    r"polish|prepare|proofread|purge|refactor|remove|rename|render|replace|research|reset|rewrite|"
-    r"ship|summari[sz]e|truncate|update|upgrade|visuali[sz]e|write)\b",
+    r"\b(add|analy[sz]e|answer|brainstorm|build|calculate|change|clean(?:\s*up)?|compare|convert|create|"
+    r"delete|deploy|design|destroy|draft|draw|drop|edit|evaluate|find|fix|generate|help|illustrate|implement|"
+    r"improve|integrate|investigate|list|look\s+(?:at|into)|make|migrate|modernize|optimi[sz]e|outline|paint|"
+    r"plan|polish|prepare|prioritize|proofread|purge|redesign|refactor|remove|rename|render|replace|reply|research|reset|resolve|respond|rewrite|"
+    r"ship|summari[sz]e|troubleshoot|truncate|update|upgrade|visuali[sz]e|write)\b",
     re.IGNORECASE,
 )
 VAGUE_RE = re.compile(

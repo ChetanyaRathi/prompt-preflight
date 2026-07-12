@@ -89,6 +89,9 @@ Make the app responsive
 Improve the user experience
 Build out the backend
 Refactor the payment module
+Refactor the auth module
+Make the dashboard better
+Redesign the onboarding flow
 
 # Optimization
 Optimize the database
@@ -136,6 +139,11 @@ Clean the dataset
 Analyze retention trends
 Build a metrics dashboard
 Analyze user behavior
+Create a chart for the meeting
+Analyze last month's numbers
+Look at the user data
+Find out why sales dropped
+Summarize the metrics
 
 # Image generation
 Create a car image
@@ -166,6 +174,11 @@ Edit this for clarity
 Write a newsletter
 Write release notes
 Improve the README
+Write a marketing email
+Draft a tweet about the launch
+Make this paragraph better
+Write a description for the product
+Create some copy for the website
 
 # Research
 Research this topic
@@ -196,3 +209,36 @@ Create a webinar deck
 Create training slides
 Make a sales deck
 Create onboarding slides
+
+# Design
+Redesign the homepage
+Make the logo look cooler
+Improve the layout
+Fix the colors
+Design a better user profile
+Make the app look modern
+Redesign the navigation bar
+Create a wireframe for the app
+Update the typography
+
+# Support
+Reply to the customer
+Resolve this ticket
+Help the user with their issue
+Answer the support email
+Investigate the user's problem
+Draft a response to this complaint
+Troubleshoot the issue
+Fix the customer's problem
+Respond to this ticket
+
+# Product planning
+Write a product spec
+Plan the Q3 roadmap
+Create a strategy doc
+Brainstorm new features
+Draft the project plan
+List ideas for the next release
+Plan the sprint
+Write requirements for the app
+Prioritize the backlog
