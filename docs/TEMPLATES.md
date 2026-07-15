@@ -33,6 +33,8 @@ Prompt Preflight includes a spec-driven development template pack for teams that
 
 These templates are available in Markdown, XML, and TOML. In VS Code, run `Prompt Preflight: New Prompt Template`, choose a format, then choose one of the spec-driven profiles.
 
+See [Spec-Driven Development Examples](SPEC_DRIVEN_EXAMPLES.md) for a complete end-to-end workflow.
+
 <!-- BEGIN GENERATED TEMPLATE DOCS - do not edit by hand -->
 Supported profiles:
 
