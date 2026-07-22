@@ -38,7 +38,7 @@ Cases covered: **vague**, **clear**, **privacy-risk**, **structured-template**.
 ## Run the parity suite
 
 ```bash
-python3 -m unittest tests.test_parity_fixtures -v
+python3 -m unittest discover -s tests -p 'test_parity_fixtures.py' -v
 ```
 
 ## Regenerate snapshots
@@ -53,7 +53,7 @@ python3 scripts/update_parity_fixtures.py
 Or:
 
 ```bash
-UPDATE_PARITY_FIXTURES=1 python3 -m unittest tests.test_parity_fixtures -v
+UPDATE_PARITY_FIXTURES=1 python3 -m unittest discover -s tests -p 'test_parity_fixtures.py' -v
 ```
 
 Do **not** hand-edit expected JSON to force a green build. Re-run the update
