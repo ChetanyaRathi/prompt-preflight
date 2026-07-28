@@ -14,7 +14,7 @@ FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "parity"
 PROMPTS_PATH = FIXTURE_DIR / "prompts.jsonl"
 EXPECTED_DIR = FIXTURE_DIR / "expected"
 
-HOSTS = ("cli", "vscode", "codex", "claude", "kiro")
+HOSTS = ("cli", "vscode_cli_equivalent", "codex", "claude", "kiro")
 
 CORE_KEYS = ("decision", "should_clarify", "intent", "checks", "question_count")
 
@@ -54,7 +54,7 @@ def normalize_core(analysis: dict[str, object], *, decision: str | None = None) 
 
 
 def _run_cli_json(prompt: str, *, cwd: str | None = None) -> dict[str, object]:
-    """Invoke the CLI the same way the VS Code extension does (`--json`)."""
+    """Invoke the shared-analyzer CLI (`--json`) — the same analyzer the VS Code extension calls, not the TypeScript client."""
     completed = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "prompt_preflight.py"), "--json", prompt],
         cwd=cwd or str(ROOT),
@@ -126,7 +126,7 @@ def _decision_from_kiro(completed: subprocess.CompletedProcess[str]) -> str:
 def run_host(host: str, prompt: str, *, isolated_cwd: str) -> dict[str, object]:
     """Run one host adapter and return the normalized decision core.
 
-    CLI and VS Code both use ``scripts/prompt_preflight.py --json``. Codex, Claude,
+    CLI and the vscode_cli_equivalent host both use ``scripts/prompt_preflight.py --json`` (shared analyzer, not the TS client). Codex, Claude,
     and Kiro expose decision via host-specific formats; analyzer fields come from
     the shared CLI JSON so the normalized core can be compared across hosts.
     """
@@ -135,7 +135,7 @@ def run_host(host: str, prompt: str, *, isolated_cwd: str) -> dict[str, object]:
 
     analysis = _run_cli_json(prompt, cwd=isolated_cwd)
 
-    if host in ("cli", "vscode"):
+    if host in ("cli", "vscode_cli_equivalent"):
         return normalize_core(analysis)
 
     if host == "codex":

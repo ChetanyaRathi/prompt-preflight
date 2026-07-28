@@ -1,7 +1,6 @@
 # Cross-host parity fixtures
 
-These fixtures prove that Codex, Claude Code, Kiro, the CLI, and the VS Code
-analyzer client all agree on the same normalized decision core for a shared set
+These fixtures prove that Codex, Claude Code, Kiro, the CLI, and the VS Code CLI-equivalent host all agree on the same normalized decision core for a shared set
 of prompts — even though each host formats its raw output differently.
 
 ## What is compared
@@ -22,8 +21,7 @@ Each host run is reduced to:
   the shared analyzer.
 - Hook hosts (Codex, Claude, Kiro) contribute their native allow/block/nudge
   signal; that signal must match the analyzer `decision`.
-- VS Code is exercised the same way the extension does: `python3
-  scripts/prompt_preflight.py --json`.
+- The VS Code host (`vscode_cli_equivalent`) runs the shared analyzer via `python3 scripts/prompt_preflight.py --json` — the same analyzer the extension calls. It does NOT exercise the TypeScript client (profile routing, diagnostics, CodeLens, or packaged-analyzer resolution).
 
 ## Files
 
