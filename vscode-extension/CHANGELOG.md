@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Six spec-driven template commands that open a chosen template directly from the Command Palette: **New Feature Spec**, **New Requirements Spec**, **New Technical Design Spec**, **New Implementation Plan**, **New Agent Execution Prompt**, and **New Spec Review Checklist**. Each prompts for Markdown / TOML / XML and opens an untitled document without modifying the active editor.
+
 ## 0.0.2
 
 - Adds Marketplace beta positioning and packaged README/demo polish.

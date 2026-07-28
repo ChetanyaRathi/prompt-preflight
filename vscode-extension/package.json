@@ -66,6 +66,12 @@
     "onCommand:promptPreflight.openTelemetryDashboard",
     "onCommand:promptPreflight.runSetupDoctor",
     "onCommand:promptPreflight.openReleaseReadinessChecklist",
+    "onCommand:promptPreflight.newFeatureSpec",
+    "onCommand:promptPreflight.newRequirementsSpec",
+    "onCommand:promptPreflight.newTechnicalDesignSpec",
+    "onCommand:promptPreflight.newImplementationPlan",
+    "onCommand:promptPreflight.newAgentExecutionPrompt",
+    "onCommand:promptPreflight.newSpecReviewChecklist",
     "onLanguage:markdown",
     "onLanguage:xml",
     "onLanguage:toml"
