@@ -46,6 +46,17 @@ The Marketplace package bundles the Python analyzer, so normal users do not need
 4. Run the preflight check to see intent, vagueness score, and any missing required fields
    ![Prompt Preflight Result: intent, vagueness score, decision, missing-field reasons](https://raw.githubusercontent.com/akg268/prompt-preflight/main/vscode-extension/media/spec-flow-04-result.png)
 
+### Spec-driven template commands
+
+Open a specific spec-driven template directly from the Command Palette, skipping profile selection in **New Prompt Template**. Each command asks whether you want Markdown, TOML, or XML, then opens the result as a new untitled document without modifying the active editor.
+
+- **Prompt Preflight: New Feature Spec** — feature spec scaffold
+- **Prompt Preflight: New Requirements Spec** — requirements spec scaffold
+- **Prompt Preflight: New Technical Design Spec** — technical design scaffold
+- **Prompt Preflight: New Implementation Plan** — implementation plan scaffold
+- **Prompt Preflight: New Agent Execution Prompt** — agent execution prompt scaffold
+- **Prompt Preflight: New Spec Review Checklist** — spec review checklist scaffold
+
 ## Why use it?
 
 AI-agent prompts often live in Markdown notes, team prompt libraries, docs, tickets, or scratch files before they are pasted into a model. This extension helps catch vague or risky prompts earlier, while the prompt is still being written.
