@@ -1,6 +1,6 @@
 # Sample prompt library
 
-Copyable starter pack for team prompt libraries. Use it to try folder profiles, opt-in workspace lint, and CI checks before you invent your own layout.
+Copyable starter pack for team prompt libraries. Use it to try opt-in workspace lint and CI checks before you invent your own layout.
 
 ## Layout
 
@@ -13,26 +13,14 @@ docs/prompts/
 `-- coding/          # concrete coding tasks
 ```
 
-Each domain folder has an intentionally vague sample and a passing sample so you can see what Prompt Preflight blocks versus allows.
+Each domain folder has an intentionally vague sample and a passing sample so you can see what Prompt Preflight blocks versus allows. The vague samples are demo FAIL output and are deliberately left without the opt-in marker, so lint skips them rather than failing on them by design. The passing samples carry the marker and are meant to pass.
 
 ## How to adapt this folder
 
 1. Copy `docs/prompts/` into your repo (or start empty and keep the same domain folders).
-2. Copy `.prompt-preflight.example.json` to `.prompt-preflight.json` and keep or trim the `profiles` entries that match these paths.
-3. Replace the sample prompts with your real templates. Keep the opt-in marker on every file you want CI or workspace lint to check (copy the comment line from any sample file in this folder).
-4. Delete the vague samples once the demo is no longer useful — they exist only to show FAIL output.
-
-## Folder profiles
-
-The repository example config (`.prompt-preflight.example.json`) includes a `profiles` array that routes these folders to domain-appropriate policy. Copy that block into your project `.prompt-preflight.json` and adjust globs or modes as needed.
-
-Example entries:
-
-- `docs/prompts/research/**` → research, block
-- `docs/prompts/specs/**` → software, block, with `plan_first` / `template_contract`
-- `docs/prompts/data-analysis/**` → data_analysis, block
-- `docs/prompts/presentations/**` → presentation, nudge
-- `docs/prompts/coding/**` → software, block
+2. Copy `.prompt-preflight.example.json` to `.prompt-preflight.json` and adjust the checks/thresholds to taste.
+3. Replace the sample prompts with your real templates. Keep the opt-in marker on every file you want CI or workspace lint to check (copy the comment line from any passing sample file in this folder).
+4. Delete the vague samples once the demo is no longer useful - they exist only to show FAIL output.
 
 ## Lint from the CLI
 
@@ -52,9 +40,9 @@ Behavior:
 
 In VS Code, the same marker powers **Prompt Preflight: Lint Workspace Prompt Files**.
 
-## What “good” looks like
+## What "good" looks like
 
-Vague samples are short requests without audience, files, metrics, or output shape (for example, “Research this topic” or “Make the dashboard better”). Passing samples name concrete inputs, constraints, and deliverables — the same bar as the analyzer’s calibrated allow cases.
+Vague samples are short requests without audience, files, metrics, or output shape (for example, "Research this topic" or "Make the dashboard better"). Passing samples name concrete inputs, constraints, and deliverables - the same bar as the analyzer's calibrated allow cases.
 
 ## Opt-in marker
 
