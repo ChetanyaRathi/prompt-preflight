@@ -212,7 +212,7 @@
     "jsonValidation": [
       {
         "fileMatch": [".prompt-preflight.json", ".prompt-preflight.example.json"],
-        "url": "../schemas/prompt-preflight.schema.json"
+        "url": "./bundled-analyzer/schemas/prompt-preflight.schema.json"
       }
     ]
   },

@@ -33,6 +33,10 @@ const runtimeCopies = [
   {
     from: path.join(repoRoot, "docs", "EXAMPLES.md"),
     to: path.join(bundledRoot, "docs", "EXAMPLES.md")
+  },
+  {
+    from: path.join(repoRoot, "schemas", "prompt-preflight.schema.json"),
+    to: path.join(bundledRoot, "schemas", "prompt-preflight.schema.json")
   }
 ];
 
@@ -96,7 +100,8 @@ function assertRequiredFiles() {
     path.join(bundledRoot, "src", "prompt_preflight", "analyzer.py"),
     path.join(bundledRoot, "src", "prompt_preflight", "data", "prompt_templates.json"),
     path.join(bundledRoot, "src", "prompt_preflight", "data", "vague_prompts.txt"),
-    path.join(bundledRoot, "docs", "EXAMPLES.md")
+    path.join(bundledRoot, "docs", "EXAMPLES.md"),
+    path.join(bundledRoot, "schemas", "prompt-preflight.schema.json")
   ];
 
   const missing = required.filter((filePath) => !fs.existsSync(filePath));

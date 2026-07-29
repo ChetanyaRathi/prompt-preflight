@@ -40,7 +40,8 @@ const REQUIRED_FILES = [
   "extension/bundled-analyzer/src/prompt_preflight/analyzer.py",
   "extension/bundled-analyzer/src/prompt_preflight/data/prompt_templates.json",
   "extension/bundled-analyzer/src/prompt_preflight/data/vague_prompts.txt",
-  "extension/bundled-analyzer/docs/EXAMPLES.md"
+  "extension/bundled-analyzer/docs/EXAMPLES.md",
+  "extension/bundled-analyzer/schemas/prompt-preflight.schema.json"
 ];
 
 /**

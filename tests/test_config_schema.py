@@ -42,23 +42,6 @@ class ConfigSchemaTests(unittest.TestCase):
     def test_empty_object_validates(self) -> None:
         self._assert_valid({})
 
-    def test_profiles_optional_overlay_validates(self) -> None:
-        self._assert_valid(
-            {
-                "enabled": True,
-                "mode": "block",
-                "profiles": [
-                    {
-                        "match": "docs/prompts/research/**",
-                        "intent": "research",
-                        "mode": "block",
-                        "checks": {"output_contract": "block"},
-                        "max_questions": 3,
-                    }
-                ],
-            }
-        )
-
     def test_bad_check_policy_value_fails(self) -> None:
         self._assert_invalid({"checks": {"clarity": "warn"}})
 

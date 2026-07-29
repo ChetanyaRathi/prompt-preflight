@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ChetanyaRathi/prompt-preflight/schemas/prompt-preflight.schema.json",
+  "$id": "https://github.com/akg268/prompt-preflight/schemas/prompt-preflight.schema.json",
   "title": "Prompt Preflight project config",
   "description": "Schema for .prompt-preflight.json team/project policy files.",
   "type": "object",
@@ -18,7 +18,7 @@
       "type": "integer",
       "minimum": 0,
       "maximum": 100,
-      "description": "Clarification threshold (0–100)."
+      "description": "Clarification threshold (0-100)."
     },
     "max_questions": {
       "type": "integer",
@@ -99,11 +99,6 @@
           }
         }
       ]
-    },
-    "profiles": {
-      "type": "array",
-      "description": "Optional path/intent overlays (Shared Contract). Not yet loaded by config.py; accepted for forward compatibility.",
-      "items": { "$ref": "#/$defs/profile" }
     }
   },
   "$defs": {
@@ -130,30 +125,6 @@
         "risk": { "$ref": "#/$defs/checkPolicy" },
         "plan_first": { "$ref": "#/$defs/checkPolicy" },
         "privacy": { "$ref": "#/$defs/checkPolicy" }
-      }
-    },
-    "profile": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Overlay applied when a prompt path or intent matches. Prefer including match.",
-      "properties": {
-        "match": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Glob matched against the prompt file path (recommended)."
-        },
-        "intent": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Optional intent label this overlay applies to."
-        },
-        "mode": { "$ref": "#/$defs/enforcementMode" },
-        "checks": { "$ref": "#/$defs/checks" },
-        "max_questions": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 5
-        }
       }
     }
   }
