@@ -7,6 +7,7 @@ import { runReleaseReadinessTests } from "./releaseReadiness.test";
 import { runSetupDoctorTests } from "./setupDoctor.test";
 import { runSpecTemplateCommandTests } from "./specTemplateCommands.test";
 import { runTelemetryStoreTests } from "./telemetryStore.test";
+import { runTelemetrySummaryTests } from "./telemetrySummary.test";
 import { runTemplateDocumentTests } from "./templateDocument.test";
 import { runWorkspaceLintRulesTests } from "./workspaceLintRules.test";
 
@@ -25,6 +26,7 @@ async function main(): Promise<void> {
   runReleaseReadinessTests();
   runSetupDoctorTests();
   runTelemetryStoreTests();
+  runTelemetrySummaryTests();
 
   if (process.exitCode) {
     return;

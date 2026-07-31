@@ -318,6 +318,7 @@ Open the Command Palette with `Cmd+Shift+P` on macOS or `Ctrl+Shift+P` on Window
 | `Prompt Preflight: Open Team Policy` | Opens an existing policy file, or opens an untitled policy template when one does not exist. |
 | `Prompt Preflight: Open Prompt Composer` | Opens the form-based prompt composer. |
 | `Prompt Preflight: Open Telemetry Dashboard` | Opens local telemetry graphs and token-estimate summaries. |
+| `Prompt Preflight: Export Telemetry Summary` | Exports a privacy-safe telemetry summary to JSON or Markdown. |
 | `Prompt Preflight: Run Setup Doctor` | Opens a setup report for repo path, Python path, duplicate extensions, and telemetry policy. |
 | `Prompt Preflight: Open Release Readiness Checklist` | Opens the public-release gate checklist. |
 
