@@ -677,6 +677,14 @@ Prompt Preflight: Open Telemetry Dashboard
 
 The dashboard reads the same local JSONL telemetry file and renders cards plus bar charts for decisions, block reasons, hosts, daily activity, postflight checks, and token-risk buckets.
 
+VS Code users can also export this data:
+
+```text
+Prompt Preflight: Export Telemetry Summary
+```
+
+The export command generates a privacy-safe aggregate summary (in JSON or Markdown) containing identical totals to the dashboard. It does not export raw telemetry events or prompt text.
+
 The telemetry file stores only aggregate fields:
 
 - host, such as `codex`, `claude-code`, `kiro`, or `cli`

@@ -7,7 +7,8 @@ import {
   parseTelemetryJsonl,
   resolveTelemetryPolicy,
   shouldRecordTelemetry,
-  summarizeTelemetryEvents
+  summarizeDashboardEvents,
+  TelemetryEvent
 } from "../telemetryStore";
 import { runSuite } from "./testHarness";
 
@@ -56,7 +57,7 @@ export function runTelemetryStoreTests(): void {
     {
       name: "summarizes preflight postflight and token observability",
       run: () => {
-        const summary = summarizeTelemetryEvents(
+        const summary = summarizeDashboardEvents(
           [
             {
               phase: "preflight",

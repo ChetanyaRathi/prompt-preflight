@@ -23,6 +23,7 @@ import { buildSetupDoctorReport, setupDoctorMarkdown } from "./setupDoctor";
 import { SPEC_TEMPLATE_COMMANDS } from "./specTemplateCommands";
 import { TelemetryDashboardPanel } from "./telemetryDashboardPanel";
 import { shouldRecordTelemetry } from "./telemetryStore";
+import { exportTelemetrySummary } from "./telemetryExport";
 
 /**
  * Tracks where a prompt came from so a suggested rewrite can be applied back to
@@ -571,6 +572,9 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.commands.registerCommand("promptPreflight.openTelemetryDashboard", () =>
       TelemetryDashboardPanel.open(context, activeWorkspacePath())
+    ),
+    vscode.commands.registerCommand("promptPreflight.exportTelemetrySummary", () =>
+      exportTelemetrySummary(activeWorkspacePath())
     ),
     vscode.commands.registerCommand("promptPreflight.runSetupDoctor", () =>
       openSetupDoctor(context)
